@@ -6,15 +6,15 @@ readme = "README.md"
 authors = [
     { name = "Rubén Prikhodtchenko Shumilo", email = "rubenps2409@gmail.com" }
 ]
-requires-python = ">=3.10"
-dependencies = []
-
-[project.scripts]
-invoice-api = "invoice_api:main"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[standard]>=0.143.0",
+    "pydantic-settings>=2.15.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.fastapi]
-entrypoint = "src.invoice_api.main:app"
+entrypoint = "invoice_api.main:app"
