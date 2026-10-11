@@ -14,6 +14,8 @@ class Category(Base):
     name: Mapped[str] = mapped_column(String(100))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
 
-    invoices: Mapped[list["Invoice"]] = relationship(back_populates="category")
+    invoices: Mapped[list["Invoice"]] = relationship(
+        back_populates="category", passive_deletes="all"
+    )
 
     __table_args__ = (UniqueConstraint("name", "user_id", name="uq_category_name_user_id"),)

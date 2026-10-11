@@ -14,6 +14,8 @@ class Supplier(Base):
     name: Mapped[str] = mapped_column(String(255))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
 
-    invoices: Mapped[list["Invoice"]] = relationship(back_populates="supplier")
+    invoices: Mapped[list["Invoice"]] = relationship(
+        back_populates="supplier", passive_deletes="all"
+    )
 
     __table_args__ = (UniqueConstraint("name", "user_id", name="uq_supplier_name_user_id"),)

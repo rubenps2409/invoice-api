@@ -1,21 +1,22 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
+
+from invoice_api.schemas.common import Str100
 
 
-class CategoryBase(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    name: str = Field(min_length=1, max_length=100)
-
-
-class CategoryCreate(CategoryBase):
+class CategoryCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    name: Str100
 
-class CategoryUpdate(CategoryBase):
+
+class CategoryUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    name: Str100
 
-class CategoryRead(CategoryBase):
+
+class CategoryRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    name: str

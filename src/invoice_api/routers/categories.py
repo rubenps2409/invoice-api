@@ -1,19 +1,20 @@
-from typing import Annotated, NoReturn
-
-from fastapi import APIRouter, HTTPException, Query, status
-from psycopg.errors import ForeignKeyViolation, UniqueViolation
+from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
-from invoice_api.dependencies import CurrentUserId, DbSession, IdPath
-from invoice_api.models.category import Category
+from invoice_api.db_helpers import commit_or_conflict
+from invoice_api.dependencies import CurrentUserId, DbSession, IdPath, Limit, Skip
+from invoice_api.constants import DEFAULT_PAGE_SIZE
+from invoice_api.models import Category
 from invoice_api.schemas.category import CategoryCreate, CategoryRead, CategoryUpdate
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
+_DUPLICATE = "A category with this name already exists"
+_IN_USE = "Category is used by invoices and cannot be deleted"
 
-def _get_owned_category(db: Session, category_id: int, user_id: int) -> Category:
+
+def _get_owned_category(db: DbSession, category_id: int, user_id: int) -> Category:
+    """404 tanto si no existe como si es de otro usuario (no filtra existencia)."""
     category = db.scalar(
         select(Category).where(Category.id == category_id, Category.user_id == user_id)
     )
@@ -22,29 +23,11 @@ def _get_owned_category(db: Session, category_id: int, user_id: int) -> Category
     return category
 
 
-def _raise_conflict() -> NoReturn:
-    raise HTTPException(
-        status.HTTP_409_CONFLICT, "A category with this name already exists"
-    )
-
-
-def _commit_or_conflict(db: Session) -> None:
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        if isinstance(exc.orig, UniqueViolation):
-            _raise_conflict()
-        raise
-
-
 @router.post("", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
-def create_category(
-    payload: CategoryCreate, db: DbSession, user_id: CurrentUserId
-) -> Category:
-    category = Category(name=payload.name, user_id=user_id)
+def create_category(data: CategoryCreate, db: DbSession, user_id: CurrentUserId):
+    category = Category(**data.model_dump(), user_id=user_id)
     db.add(category)
-    _commit_or_conflict(db)
+    commit_or_conflict(db, unique_detail=_DUPLICATE)
     return category
 
 
@@ -52,9 +35,9 @@ def create_category(
 def list_categories(
     db: DbSession,
     user_id: CurrentUserId,
-    skip: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 50,
-) -> list[Category]:
+    skip: Skip = 0,
+    limit: Limit = DEFAULT_PAGE_SIZE,
+):
     stmt = (
         select(Category)
         .where(Category.user_id == user_id)
@@ -62,35 +45,27 @@ def list_categories(
         .offset(skip)
         .limit(limit)
     )
-    return list(db.scalars(stmt).all())
+    return db.scalars(stmt).all()
 
 
 @router.get("/{category_id}", response_model=CategoryRead)
-def get_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId) -> Category:
+def get_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId):
     return _get_owned_category(db, category_id, user_id)
 
 
 @router.put("/{category_id}", response_model=CategoryRead)
 def update_category(
-    category_id: IdPath, payload: CategoryUpdate, db: DbSession, user_id: CurrentUserId
-) -> Category:
+    category_id: IdPath, data: CategoryUpdate, db: DbSession, user_id: CurrentUserId
+):
     category = _get_owned_category(db, category_id, user_id)
-    category.name = payload.name
-    _commit_or_conflict(db)
+    category.name = data.name
+    commit_or_conflict(db, unique_detail=_DUPLICATE)
     return category
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId) -> None:
+def delete_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId):
     category = _get_owned_category(db, category_id, user_id)
     db.delete(category)
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        if isinstance(exc.orig, ForeignKeyViolation):
-            raise HTTPException(
-                status.HTTP_409_CONFLICT,
-                "Category has invoices and cannot be deleted",
-            )
-        raise
+    commit_or_conflict(db, unique_detail=_IN_USE, fk_detail=_IN_USE)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
