@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-app = FastAPI()
+from invoice_api.routers import categories
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
+app = FastAPI(title="Invoice API")
+
+app.include_router(categories.router)
