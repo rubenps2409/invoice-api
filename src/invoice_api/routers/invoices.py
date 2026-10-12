@@ -33,10 +33,9 @@ def _get_owned_invoice(db: DbSession, invoice_id: int, user_id: int) -> Invoice:
 def _ensure_references(
     db: DbSession, user_id: int, supplier_id: int | None, category_id: int | None
 ) -> None:
-    """Comprueba que supplier/category existen Y son del usuario.
+    """Check that supplier/category exist AND belong to the user.
 
-    Sin esto, un usuario podría enlazar facturas a proveedores ajenos
-    (fuga de datos entre usuarios) o provocar un 500 por FK inexistente.
+    Prevents linking invoices to other users' records and FK errors (500).
     """
     if supplier_id is not None and db.scalar(
         select(Supplier.id).where(Supplier.id == supplier_id, Supplier.user_id == user_id)
@@ -53,7 +52,7 @@ def create_invoice(data: InvoiceCreate, db: DbSession, user_id: CurrentUserId):
     _ensure_references(db, user_id, data.supplier_id, data.category_id)
     invoice = Invoice(**data.model_dump(), user_id=user_id)
     db.add(invoice)
-    # FK 409: el proveedor/categoría pudo borrarse entre la comprobación y el commit.
+    # The supplier/category may be deleted between the check and the commit.
     commit_or_conflict(
         db,
         unique_detail=_DUPLICATE,
@@ -88,7 +87,7 @@ def list_invoices(
         stmt = stmt.where(Invoice.issue_date >= date_from)
     if date_to is not None:
         stmt = stmt.where(Invoice.issue_date <= date_to)
-    # id como desempate: orden determinista => paginación estable.
+    # id as tie-breaker keeps the order deterministic, so pagination is stable.
     stmt = stmt.order_by(Invoice.issue_date.desc(), Invoice.id.desc())
     return db.scalars(stmt.offset(skip).limit(limit)).all()
 
@@ -105,7 +104,6 @@ def update_invoice(
     invoice = _get_owned_invoice(db, invoice_id, user_id)
     changes = data.model_dump(exclude_unset=True)
 
-    # Solo se validan las referencias que realmente cambian.
     _ensure_references(
         db,
         user_id,
@@ -113,7 +111,7 @@ def update_invoice(
         changes.get("category_id"),
     )
 
-    # El schema solo ve el body; la coherencia final es la del estado fusionado.
+    # The schema only sees the request body; validate the merged state.
     try:
         check_totals(
             changes.get("base_amount", invoice.base_amount),

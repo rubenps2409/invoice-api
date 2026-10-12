@@ -1,7 +1,5 @@
-"""Constantes compartidas por schemas y dependencias."""
-
-# Máximo de un INTEGER de PostgreSQL (2^31 - 1). Un id mayor provoca
-# "integer out of range" -> error 500, así que se rechaza en el borde (422).
+# Max value of a PostgreSQL INTEGER (2^31 - 1). Larger ids would cause
+# "integer out of range" (500), so they are rejected at the edge (422).
 POSTGRES_INT_MAX = 2_147_483_647
 
 DEFAULT_PAGE_SIZE = 20

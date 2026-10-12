@@ -14,7 +14,7 @@ _IN_USE = "Category is used by invoices and cannot be deleted"
 
 
 def _get_owned_category(db: DbSession, category_id: int, user_id: int) -> Category:
-    """404 tanto si no existe como si es de otro usuario (no filtra existencia)."""
+    """Return 404 for missing and foreign records alike, so existence isn't leaked."""
     category = db.scalar(
         select(Category).where(Category.id == category_id, Category.user_id == user_id)
     )

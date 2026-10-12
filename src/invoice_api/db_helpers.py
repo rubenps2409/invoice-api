@@ -16,11 +16,11 @@ def commit_or_conflict(
     unique_detail: str,
     fk_detail: str | None = None,
 ) -> None:
-    """Hace commit traduciendo errores de integridad *esperables* a 409.
+    """Commit, translating *expected* integrity errors into 409 Conflict.
 
-    - UniqueViolation -> 409 con `unique_detail`.
-    - ForeignKeyViolation -> 409 con `fk_detail` (si se indica).
-    Cualquier otro error se relanza: es un bug real y debe verse como 500.
+    - UniqueViolation -> 409 with `unique_detail`.
+    - ForeignKeyViolation -> 409 with `fk_detail` (if given).
+    Any other error is re-raised: it is a real bug and should surface as a 500.
     """
     try:
         db.commit()

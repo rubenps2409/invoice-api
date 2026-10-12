@@ -14,7 +14,7 @@ _IN_USE = "Supplier is used by invoices and cannot be deleted"
 
 
 def _get_owned_supplier(db: DbSession, supplier_id: int, user_id: int) -> Supplier:
-    """404 tanto si no existe como si es de otro usuario (no filtra existencia)."""
+    """Return 404 for missing and foreign records alike, so existence isn't leaked."""
     supplier = db.scalar(
         select(Supplier).where(Supplier.id == supplier_id, Supplier.user_id == user_id)
     )

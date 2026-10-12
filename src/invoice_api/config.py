@@ -5,10 +5,10 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",  # ignore other environment variables than database_url
+        extra="ignore",  # .env also holds the POSTGRES_* vars used by Docker Compose
     )
 
     DATABASE_URL: str
 
 
-settings = Settings()  #type: ignore
+settings = Settings()  # type: ignore
