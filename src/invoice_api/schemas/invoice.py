@@ -7,8 +7,7 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from invoice_api.models.invoice import InvoiceStatus
 from invoice_api.schemas.common import DbId, Money, Str100
 
-_NOT_NULLABLE = ("number", "supplier_id", "base_amount", "tax_amount",
-                 "total_amount", "issue_date", "status")
+_NULLABLE = {"category_id"}
 
 
 def check_totals(base: Decimal, tax: Decimal, total: Decimal) -> None:
@@ -52,8 +51,8 @@ class InvoiceUpdate(BaseModel):
     def _validate_patch(self) -> Self:
         if not self.model_fields_set:
             raise ValueError("at least one field must be provided")
-        for name in _NOT_NULLABLE:
-            if name in self.model_fields_set and getattr(self, name) is None:
+        for name in self.model_fields_set - _NULLABLE:
+            if getattr(self, name) is None:
                 raise ValueError(f"{name} cannot be null")
         base, tax, total = self.base_amount, self.tax_amount, self.total_amount
         # With a partial payload, the router checks against the stored values.
