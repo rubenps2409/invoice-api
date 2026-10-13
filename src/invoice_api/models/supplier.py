@@ -1,11 +1,13 @@
-from invoice_api.models.base import Base
-from sqlalchemy import String, ForeignKey, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from invoice_api.models.base import Base
 
 if TYPE_CHECKING:
     from invoice_api.models.invoice import Invoice
-    
+
 
 class Supplier(Base):
     __tablename__ = "suppliers"
@@ -18,4 +20,6 @@ class Supplier(Base):
         back_populates="supplier", passive_deletes="all"
     )
 
-    __table_args__ = (UniqueConstraint("name", "user_id", name="uq_supplier_name_user_id"),)
+    __table_args__ = (
+        UniqueConstraint("name", "user_id", name="uq_supplier_name_user_id"),
+    )

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Response, status
 from sqlalchemy import select
 
+from invoice_api.constants import DEFAULT_PAGE_SIZE
 from invoice_api.db_helpers import commit_or_conflict
 from invoice_api.dependencies import CurrentUserId, DbSession, IdPath, Limit, Skip
-from invoice_api.constants import DEFAULT_PAGE_SIZE
 from invoice_api.models import Supplier
 from invoice_api.schemas.supplier import SupplierCreate, SupplierRead, SupplierUpdate
 

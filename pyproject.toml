@@ -21,3 +21,16 @@ build-backend = "uv_build"
 
 [tool.fastapi]
 entrypoint = "invoice_api.main:app"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]

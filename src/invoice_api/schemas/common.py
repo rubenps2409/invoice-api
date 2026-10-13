@@ -28,6 +28,4 @@ Str255 = Annotated[
 DbId = Annotated[int, Field(ge=1, le=POSTGRES_INT_MAX)]
 
 # Numeric(10, 2): up to 99,999,999.99. Negatives are allowed (credit notes)
-Money = Annotated[
-    Decimal, Field(max_digits=10, decimal_places=2, allow_inf_nan=False)
-]
+Money = Annotated[Decimal, Field(max_digits=10, decimal_places=2, allow_inf_nan=False)]

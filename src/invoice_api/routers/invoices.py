@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlalchemy import select
@@ -37,13 +38,25 @@ def _ensure_references(
 
     Prevents linking invoices to other users' records and FK errors (500).
     """
-    if supplier_id is not None and db.scalar(
-        select(Supplier.id).where(Supplier.id == supplier_id, Supplier.user_id == user_id)
-    ) is None:
+    if (
+        supplier_id is not None
+        and db.scalar(
+            select(Supplier.id).where(
+                Supplier.id == supplier_id, Supplier.user_id == user_id
+            )
+        )
+        is None
+    ):
         raise HTTPException(_UNPROCESSABLE, "supplier_id does not exist")
-    if category_id is not None and db.scalar(
-        select(Category.id).where(Category.id == category_id, Category.user_id == user_id)
-    ) is None:
+    if (
+        category_id is not None
+        and db.scalar(
+            select(Category.id).where(
+                Category.id == category_id, Category.user_id == user_id
+            )
+        )
+        is None
+    ):
         raise HTTPException(_UNPROCESSABLE, "category_id does not exist")
 
 
@@ -67,7 +80,7 @@ def list_invoices(
     user_id: CurrentUserId,
     supplier_id: DbId | None = None,
     category_id: DbId | None = None,
-    status_: InvoiceStatus | None = Query(default=None, alias="status"),
+    status_: Annotated[InvoiceStatus | None, Query(alias="status")] = None,
     date_from: date | None = None,
     date_to: date | None = None,
     skip: Skip = 0,

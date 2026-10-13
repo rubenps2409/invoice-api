@@ -110,7 +110,7 @@ def build_invoices(
 ) -> list[Invoice]:
     rng = random.Random(SEED)
     span_days = (END_DATE - START_DATE).days
-    statuses, weights = zip(*STATUS_WEIGHTS)
+    statuses, weights = zip(*STATUS_WEIGHTS, strict=True)
     counters: dict[str, int] = {}
     invoices: list[Invoice] = []
 

@@ -5,16 +5,14 @@ Revises: 69a109d7619d
 Create Date: 2026-10-13 00:21:04.154441
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-
 
 revision: str = '4e6b071cc16d'
-down_revision: Union[str, Sequence[str], None] = '69a109d7619d'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = '69a109d7619d'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
