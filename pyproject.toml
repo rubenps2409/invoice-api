@@ -27,6 +27,7 @@ entrypoint = "invoice_api.main:app"
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "httpx2>=2.16.0",
     "pytest>=9.1.1",
     "ruff>=0.17.0",
 ]
