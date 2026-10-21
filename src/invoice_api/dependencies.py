@@ -1,18 +1,40 @@
 from typing import Annotated
 
-from fastapi import Depends, Path, Query
+from fastapi import Depends, HTTPException, Path, Query, status
+from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
 from invoice_api.constants import MAX_PAGE_SIZE, POSTGRES_INT_MAX
 from invoice_api.database import get_db
+from invoice_api.models import User
+from invoice_api.security import decode_access_token
 
-
-def get_current_user_id() -> int:
-    """Placeholder: always returns user 1. To be replaced by JWT authentication."""
-    return 1
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 DbSession = Annotated[Session, Depends(get_db)]
+
+
+def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)], db: DbSession
+) -> User:
+    user_id = decode_access_token(token)
+    user = db.get(User, user_id) if user_id is not None else None
+    if user is None:
+        raise HTTPException(
+            status.HTTP_401_UNAUTHORIZED,
+            "Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+def get_current_user_id(user: CurrentUser) -> int:
+    return user.id
+
+
 CurrentUserId = Annotated[int, Depends(get_current_user_id)]
 
 IdPath = Annotated[int, Path(ge=1, le=POSTGRES_INT_MAX)]

@@ -1,9 +1,13 @@
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 
-from invoice_api.routers import categories, invoices, suppliers
+from invoice_api.routers import auth, categories, invoices, suppliers
 
 app = FastAPI(title="Invoice API")
 
-app.include_router(categories.router)
-app.include_router(suppliers.router)
-app.include_router(invoices.router)
+api_router = APIRouter(prefix="/api")
+api_router.include_router(categories.router)
+api_router.include_router(suppliers.router)
+api_router.include_router(invoices.router)
+api_router.include_router(auth.router)
+
+app.include_router(api_router)
