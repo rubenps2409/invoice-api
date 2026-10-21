@@ -2,7 +2,10 @@ def test_protected_endpoint_requires_token(client):
     response = client.get("/api/categories")
     assert response.status_code == 401
 
-def test_user_a_can_create_and_read_invoice(client, headers_a, make_supplier, make_invoice):
+
+def test_user_a_can_create_and_read_invoice(
+    client, headers_a, make_supplier, make_invoice
+):
     supplier = make_supplier(headers_a)
     invoice = make_invoice(headers_a, supplier["id"])
 
