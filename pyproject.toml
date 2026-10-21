@@ -11,7 +11,9 @@ dependencies = [
     "alembic>=1.20.0",
     "fastapi[standard]>=0.143.0",
     "psycopg[binary]>=3.3.6",
+    "pwdlib[argon2]>=0.3.1",
     "pydantic-settings>=2.15.0",
+    "pyjwt>=2.15.1",
     "sqlalchemy>=2.1.4",
 ]
 
@@ -24,6 +26,8 @@ entrypoint = "invoice_api.main:app"
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
     "ruff>=0.17.0",
 ]
 
