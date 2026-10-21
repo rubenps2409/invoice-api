@@ -3,15 +3,15 @@ import random
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy import delete, func, select, text
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from invoice_api.database import SessionLocal
 from invoice_api.models import Category, Invoice, InvoiceStatus, Supplier, User
+from invoice_api.security import hash_password, verify_password
 
-DEMO_USER_ID = 1
 DEMO_EMAIL = "demo@example.com"
-DEMO_PASSWORD_PLACEHOLDER = "!seed-user-no-login"
+DEMO_PASSWORD = "demo-password"
 
 SEED = 2026
 INVOICE_COUNT = 28
@@ -53,60 +53,53 @@ def money(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def ensure_demo_user(db: Session) -> None:
-    if db.get(User, DEMO_USER_ID) is not None:
-        return
-    db.add(
-        User(
-            id=DEMO_USER_ID,
-            email=DEMO_EMAIL,
-            hashed_password=DEMO_PASSWORD_PLACEHOLDER,
-        )
-    )
+def ensure_demo_user(db: Session) -> User:
+    user = db.scalar(select(User).where(User.email == DEMO_EMAIL))
+    if user is None:
+        user = User(email=DEMO_EMAIL, hashed_password=hash_password(DEMO_PASSWORD))
+        db.add(user)
+    elif not verify_password(DEMO_PASSWORD, user.hashed_password):
+        user.hashed_password = hash_password(DEMO_PASSWORD)
     db.flush()
-    # The id was set explicitly, so move the sequence past it.
-    db.execute(
-        text(
-            "SELECT setval(pg_get_serial_sequence('users', 'id'), "
-            "(SELECT MAX(id) FROM users))"
-        )
-    )
+    return user
 
 
-def reset_demo_data(db: Session) -> None:
+def reset_demo_data(db: Session, user_id: int) -> None:
     for model in (Invoice, Supplier, Category):
-        db.execute(delete(model).where(model.user_id == DEMO_USER_ID))
+        db.execute(delete(model).where(model.user_id == user_id))
     db.flush()
 
 
-def get_or_create_categories(db: Session) -> dict[str, Category]:
+def get_or_create_categories(db: Session, user_id: int) -> dict[str, Category]:
     existing = {
         c.name: c
-        for c in db.scalars(select(Category).where(Category.user_id == DEMO_USER_ID))
+        for c in db.scalars(select(Category).where(Category.user_id == user_id))
     }
     for name in CATEGORIES:
         if name not in existing:
-            existing[name] = Category(name=name, user_id=DEMO_USER_ID)
+            existing[name] = Category(name=name, user_id=user_id)
             db.add(existing[name])
     db.flush()
     return existing
 
 
-def get_or_create_suppliers(db: Session) -> dict[str, Supplier]:
+def get_or_create_suppliers(db: Session, user_id: int) -> dict[str, Supplier]:
     existing = {
         s.name: s
-        for s in db.scalars(select(Supplier).where(Supplier.user_id == DEMO_USER_ID))
+        for s in db.scalars(select(Supplier).where(Supplier.user_id == user_id))
     }
     for name, *_ in SUPPLIERS:
         if name not in existing:
-            existing[name] = Supplier(name=name, user_id=DEMO_USER_ID)
+            existing[name] = Supplier(name=name, user_id=user_id)
             db.add(existing[name])
     db.flush()
     return existing
 
 
 def build_invoices(
-    suppliers: dict[str, Supplier], categories: dict[str, Category]
+    suppliers: dict[str, Supplier],
+    categories: dict[str, Category],
+    user_id: int,
 ) -> list[Invoice]:
     rng = random.Random(SEED)
     span_days = (END_DATE - START_DATE).days
@@ -132,7 +125,7 @@ def build_invoices(
                 number=f"INV-{issue_date.year}-{counters[name]:04d}",
                 supplier_id=supplier.id,
                 category_id=category.id if category else None,
-                user_id=DEMO_USER_ID,
+                user_id=user_id,
                 base_amount=base,
                 tax_amount=tax,
                 total_amount=base + tax,
@@ -144,36 +137,37 @@ def build_invoices(
 
 
 def seed(db: Session, *, reset: bool) -> None:
-    ensure_demo_user(db)
+    user = ensure_demo_user(db)
     if reset:
-        reset_demo_data(db)
+        reset_demo_data(db, user.id)
 
-    categories = get_or_create_categories(db)
-    suppliers = get_or_create_suppliers(db)
+    categories = get_or_create_categories(db, user.id)
+    suppliers = get_or_create_suppliers(db, user.id)
 
     # Skip invoices that already exist so the script can be re-run safely.
     existing = set(
         db.execute(
             select(Invoice.supplier_id, Invoice.number).where(
-                Invoice.user_id == DEMO_USER_ID
+                Invoice.user_id == user.id
             )
         ).all()
     )
     new_invoices = [
         inv
-        for inv in build_invoices(suppliers, categories)
+        for inv in build_invoices(suppliers, categories, user.id)
         if (inv.supplier_id, inv.number) not in existing
     ]
     db.add_all(new_invoices)
     db.commit()
 
     total = db.scalar(
-        select(func.count()).select_from(Invoice).where(Invoice.user_id == DEMO_USER_ID)
+        select(func.count()).select_from(Invoice).where(Invoice.user_id == user.id)
     )
     print(
         f"OK: {len(new_invoices)} new invoices ({total} total), "
         f"{len(suppliers)} suppliers, {len(categories)} categories."
     )
+    print(f"Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}")
 
 
 def main() -> None:

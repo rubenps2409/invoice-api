@@ -13,9 +13,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 DbSession = Annotated[Session, Depends(get_db)]
 
+AccessToken = Annotated[str, Depends(oauth2_scheme)]
 
 def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)], db: DbSession
+    token: AccessToken, db: DbSession
 ) -> User:
     user_id = decode_access_token(token)
     user = db.get(User, user_id) if user_id is not None else None
