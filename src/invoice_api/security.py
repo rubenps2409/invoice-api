@@ -6,6 +6,7 @@ from pwdlib import PasswordHash
 from pwdlib.exceptions import UnknownHashError
 
 from invoice_api.config import settings
+from invoice_api.constants import POSTGRES_INT_MAX
 
 password_hash = PasswordHash.recommended()
 
@@ -35,6 +36,11 @@ def decode_access_token(token: str) -> int | None:
             algorithms=[settings.ALGORITHM],
             options={"require": ["exp", "sub"]},
         )
-        return int(payload["sub"])
+        user_id = int(payload["sub"])
     except (InvalidTokenError, ValueError):
         return None
+
+    # A validly signed token must still carry an id the database can look up.
+    if not 1 <= user_id <= POSTGRES_INT_MAX:
+        return None
+    return user_id
