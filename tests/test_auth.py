@@ -15,9 +15,7 @@ EMAIL = "ana@example.com"
 
 
 def test_register_returns_user_without_password(client):
-    response = client.post(
-        "/api/auth/register", json={"email": EMAIL, "password": PASSWORD}
-    )
+    response = client.post("/api/auth/register", json={"email": EMAIL, "password": PASSWORD})
 
     assert response.status_code == 201
     body = response.json()
@@ -45,9 +43,7 @@ def test_register_lowercases_email(client):
 def test_register_duplicate_email_returns_409(client):
     create_user(client, EMAIL)
 
-    response = client.post(
-        "/api/auth/register", json={"email": EMAIL, "password": PASSWORD}
-    )
+    response = client.post("/api/auth/register", json={"email": EMAIL, "password": PASSWORD})
 
     assert response.status_code == 409
 
@@ -93,9 +89,7 @@ def test_register_rejects_invalid_payload(client, payload):
 def test_login_returns_bearer_token(client):
     create_user(client, EMAIL)
 
-    response = client.post(
-        "/api/auth/login", data={"username": EMAIL, "password": PASSWORD}
-    )
+    response = client.post("/api/auth/login", data={"username": EMAIL, "password": PASSWORD})
 
     assert response.status_code == 200
     body = response.json()
@@ -167,9 +161,7 @@ def test_me_with_token_signed_with_other_key_returns_401(client):
         algorithm=settings.ALGORITHM,
     )
 
-    response = client.get(
-        "/api/users/me", headers={"Authorization": f"Bearer {forged}"}
-    )
+    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {forged}"})
 
     assert response.status_code == 401
 
@@ -182,9 +174,7 @@ def test_me_with_expired_token_returns_401(client):
         algorithm=settings.ALGORITHM,
     )
 
-    response = client.get(
-        "/api/users/me", headers={"Authorization": f"Bearer {expired}"}
-    )
+    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {expired}"})
 
     assert response.status_code == 401
 
@@ -279,9 +269,7 @@ def test_register_accepts_unicode_password_and_login_works(client):
     password = "contraseña🙂123"
     create_user(client, EMAIL, password)
 
-    response = client.post(
-        "/api/auth/login", data={"username": EMAIL, "password": password}
-    )
+    response = client.post("/api/auth/login", data={"username": EMAIL, "password": password})
 
     assert response.status_code == 200
 
@@ -299,8 +287,6 @@ def test_login_with_very_long_password_returns_401(client):
 def test_login_requires_form_data_not_json(client):
     create_user(client, EMAIL)
 
-    response = client.post(
-        "/api/auth/login", json={"username": EMAIL, "password": PASSWORD}
-    )
+    response = client.post("/api/auth/login", json={"username": EMAIL, "password": PASSWORD})
 
     assert response.status_code == 422

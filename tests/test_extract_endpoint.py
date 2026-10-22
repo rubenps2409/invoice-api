@@ -264,9 +264,7 @@ def test_failed_attempts_are_recorded_for_the_right_user(
 
 def test_error_responses_do_not_echo_the_invoice_text(client, headers_a, use_extractor):
     secret = "SECRET-CUSTOMER-DATA"
-    use_extractor(
-        ExtractionInvalidOutput("The model did not return a valid invoice", [])
-    )
+    use_extractor(ExtractionInvalidOutput("The model did not return a valid invoice", []))
 
     response = post(client, headers_a, text=secret)
 
@@ -308,9 +306,7 @@ def test_duplicate_invoice_returns_409_but_the_cost_is_kept(
     assert len(llm_calls(db)) == 2  # both calls spent tokens
 
 
-def test_other_users_can_extract_the_same_invoice(
-    client, headers_a, headers_b, use_extractor
-):
+def test_other_users_can_extract_the_same_invoice(client, headers_a, headers_b, use_extractor):
     use_extractor(succeed())
     a = post(client, headers_a)
 
@@ -327,10 +323,7 @@ def test_extracted_invoices_are_isolated_between_users(
     use_extractor(succeed())
     invoice = post(client, headers_a).json()
 
-    assert (
-        client.get(f"/api/invoices/{invoice['id']}", headers=headers_b).status_code
-        == 404
-    )
+    assert client.get(f"/api/invoices/{invoice['id']}", headers=headers_b).status_code == 404
     assert client.get("/api/invoices", headers=headers_b).json() == []
 
 

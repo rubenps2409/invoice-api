@@ -101,9 +101,7 @@ def test_failed_attempts_without_tokens_are_recorded_with_zero_cost(db, user):
 def test_long_detail_is_truncated_to_fit_the_column(db, user):
     long_detail = "x" * 1000
 
-    record_attempts(
-        db, user.id, [Attempt("invalid_output", 1, 1, 1, long_detail)], model="m"
-    )
+    record_attempts(db, user.id, [Attempt("invalid_output", 1, 1, 1, long_detail)], model="m")
 
     stored = db.scalar(select(LlmCall.detail))
     assert stored is not None

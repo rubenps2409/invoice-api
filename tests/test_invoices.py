@@ -150,9 +150,7 @@ def test_create_rejects_amount_beyond_column_precision(client, headers_a, suppli
     assert response.status_code == 422
 
 
-def test_create_accepts_negative_amounts_for_credit_notes(
-    headers_a, supplier, make_invoice
-):
+def test_create_accepts_negative_amounts_for_credit_notes(headers_a, supplier, make_invoice):
     invoice = make_invoice(
         headers_a,
         supplier["id"],
@@ -207,9 +205,7 @@ def test_same_number_and_supplier_name_is_allowed_for_different_users(
 
 
 @pytest.mark.parametrize("field", ["supplier_id", "category_id"])
-def test_create_with_nonexistent_reference_returns_422(
-    client, headers_a, supplier, field
-):
+def test_create_with_nonexistent_reference_returns_422(client, headers_a, supplier, field):
     payload = {
         "number": "X-1",
         "supplier_id": supplier["id"],
@@ -283,9 +279,7 @@ def test_invalid_id_returns_422(client, headers_a, invoice_id):
     url = f"{URL}/{invoice_id}"
 
     assert client.get(url, headers=headers_a).status_code == 422
-    assert (
-        client.patch(url, json={"status": "paid"}, headers=headers_a).status_code == 422
-    )
+    assert client.patch(url, json={"status": "paid"}, headers=headers_a).status_code == 422
     assert client.delete(url, headers=headers_a).status_code == 422
 
 
@@ -322,9 +316,7 @@ def test_list_is_ordered_by_date_descending(client, headers_a, three_invoices):
     assert _numbers(client.get(URL, headers=headers_a)) == ["NEW", "MID", "OLD"]
 
 
-def test_list_orders_same_date_by_id_descending(
-    client, headers_a, supplier, make_invoice
-):
+def test_list_orders_same_date_by_id_descending(client, headers_a, supplier, make_invoice):
     make_invoice(headers_a, supplier["id"], number="A", issue_date="2026-05-01")
     make_invoice(headers_a, supplier["id"], number="B", issue_date="2026-05-01")
 
@@ -354,15 +346,11 @@ def test_list_filter_by_supplier(client, headers_a, three_invoices):
 def test_list_filter_by_category(client, headers_a, three_invoices):
     cid = three_invoices["cat"]["id"]
 
-    assert _numbers(client.get(f"{URL}?category_id={cid}", headers=headers_a)) == [
-        "MID"
-    ]
+    assert _numbers(client.get(f"{URL}?category_id={cid}", headers=headers_a)) == ["MID"]
 
 
 def test_list_date_range_is_inclusive(client, headers_a, three_invoices):
-    response = client.get(
-        f"{URL}?date_from=2026-01-10&date_to=2026-02-10", headers=headers_a
-    )
+    response = client.get(f"{URL}?date_from=2026-01-10&date_to=2026-02-10", headers=headers_a)
 
     assert _numbers(response) == ["MID", "OLD"]
 
@@ -379,9 +367,7 @@ def test_list_filters_combine(client, headers_a, three_invoices):
 
 
 def test_list_with_date_from_after_date_to_returns_422(client, headers_a):
-    response = client.get(
-        f"{URL}?date_from=2026-05-01&date_to=2026-01-01", headers=headers_a
-    )
+    response = client.get(f"{URL}?date_from=2026-05-01&date_to=2026-01-01", headers=headers_a)
 
     assert response.status_code == 422
 
@@ -486,9 +472,7 @@ def test_patch_rejects_amounts_that_break_the_total(
     assert unchanged == created
 
 
-def test_patch_null_clears_category(
-    client, headers_a, supplier, make_category, make_invoice
-):
+def test_patch_null_clears_category(client, headers_a, supplier, make_category, make_invoice):
     category = make_category(headers_a)
     created = make_invoice(headers_a, supplier["id"], category_id=category["id"])
 
@@ -517,9 +501,7 @@ def test_patch_rejects_null_for_required_fields(
 ):
     created = make_invoice(headers_a, supplier["id"])
 
-    response = client.patch(
-        f"{URL}/{created['id']}", json={field: None}, headers=headers_a
-    )
+    response = client.patch(f"{URL}/{created['id']}", json={field: None}, headers=headers_a)
 
     assert response.status_code == 422
 
@@ -529,9 +511,7 @@ def test_patch_rejects_null_for_required_fields(
     [{}, {"unknown": 1}, {"user_id": 5}, {"status": "unknown"}, {"issue_date": "x"}],
     ids=["empty-body", "unknown-field", "user-id", "invalid-status", "invalid-date"],
 )
-def test_patch_rejects_invalid_payload(
-    client, headers_a, supplier, make_invoice, payload
-):
+def test_patch_rejects_invalid_payload(client, headers_a, supplier, make_invoice, payload):
     created = make_invoice(headers_a, supplier["id"])
 
     response = client.patch(f"{URL}/{created['id']}", json=payload, headers=headers_a)
@@ -539,22 +519,16 @@ def test_patch_rejects_invalid_payload(
     assert response.status_code == 422
 
 
-def test_patch_to_duplicate_number_returns_409(
-    client, headers_a, supplier, make_invoice
-):
+def test_patch_to_duplicate_number_returns_409(client, headers_a, supplier, make_invoice):
     make_invoice(headers_a, supplier["id"], number="ONE")
     other = make_invoice(headers_a, supplier["id"], number="TWO")
 
-    response = client.patch(
-        f"{URL}/{other['id']}", json={"number": "ONE"}, headers=headers_a
-    )
+    response = client.patch(f"{URL}/{other['id']}", json={"number": "ONE"}, headers=headers_a)
 
     assert response.status_code == 409
 
 
-def test_patch_number_to_its_own_value_is_allowed(
-    client, headers_a, supplier, make_invoice
-):
+def test_patch_number_to_its_own_value_is_allowed(client, headers_a, supplier, make_invoice):
     created = make_invoice(headers_a, supplier["id"], number="ONE")
 
     response = client.patch(
@@ -585,9 +559,7 @@ def test_patch_with_nonexistent_reference_returns_422(
 ):
     created = make_invoice(headers_a, supplier["id"])
 
-    response = client.patch(
-        f"{URL}/{created['id']}", json={field: 999999}, headers=headers_a
-    )
+    response = client.patch(f"{URL}/{created['id']}", json={field: 999999}, headers=headers_a)
 
     assert response.status_code == 422
 

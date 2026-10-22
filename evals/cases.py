@@ -215,22 +215,44 @@ CASES: tuple[EvalCase, ...] = (
         id="no_matching_category",
         description="Nothing in the category list fits: category must be null",
         text=(
-            "Clínica Dental Sonrisa S.L.\n"
-            "Factura CD-2026-0455\n"
-            "Fecha: 11/09/2026\n"
-            "Revisión odontológica y limpieza\n"
-            "Importe: 60,00 € (exento de IVA)\n"
-            "IVA: 0,00 €\n"
+            "Gimnasio Fuerza Norte S.L.\n"
+            "Factura GFN-2026-0891\n"
+            "Fecha: 25/09/2026\n"
+            "Cuota mensual - Plan Premium\n"
+            "Importe: 49,59 €\n"
+            "IVA 21%: 10,41 €\n"
             "Total: 60,00 €"
         ),
         expected={
-            "supplier_name": "Clínica Dental Sonrisa S.L.",
-            "invoice_number": "CD-2026-0455",
-            "issue_date": "2026-09-11",
-            "base_amount": "60.00",
-            "tax_amount": "0.00",
+            "supplier_name": "Gimnasio Fuerza Norte S.L.",
+            "invoice_number": "GFN-2026-0891",
+            "issue_date": "2026-09-25",
+            "base_amount": "49.59",
+            "tax_amount": "10.41",
             "total_amount": "60.00",
             "category_name": None,
+        },
+    ),
+    EvalCase(
+        id="ambiguous_numeric_date",
+        description="11/09/2026 is day/month/year in Spain: 11 September, not 9 November",
+        text=(
+            "Papelería El Cuaderno S.L.\n"
+            "Factura nº 2026-0388\n"
+            "Fecha: 11/09/2026\n"
+            "Material de oficina varios\n"
+            "Base imponible: 80,00 €\n"
+            "IVA 21%: 16,80 €\n"
+            "Total: 96,80 €"
+        ),
+        expected={
+            "supplier_name": "Papelería El Cuaderno S.L.",
+            "invoice_number": "2026-0388",
+            "issue_date": "2026-09-11",
+            "base_amount": "80.00",
+            "tax_amount": "16.80",
+            "total_amount": "96.80",
+            "category_name": "Office supplies",
         },
     ),
     EvalCase(

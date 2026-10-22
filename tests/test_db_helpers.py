@@ -43,9 +43,7 @@ def test_foreign_key_violation_becomes_409_when_a_detail_is_given():
     session = FailingSession(ForeignKeyViolation("fk"))
 
     with pytest.raises(HTTPException) as exc:
-        commit_or_conflict(
-            _as_session(session), unique_detail="duplicate", fk_detail="in use"
-        )
+        commit_or_conflict(_as_session(session), unique_detail="duplicate", fk_detail="in use")
 
     assert exc.value.status_code == 409
     assert exc.value.detail == "in use"

@@ -40,9 +40,7 @@ class Invoice(Base):
 
     supplier_id: Mapped[int] = mapped_column(ForeignKey("suppliers.id"), index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    category_id: Mapped[int | None] = mapped_column(
-        ForeignKey("categories.id"), index=True
-    )
+    category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), index=True)
 
     base_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     tax_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))

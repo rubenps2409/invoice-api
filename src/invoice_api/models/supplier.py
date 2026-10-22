@@ -20,6 +20,4 @@ class Supplier(Base):
         back_populates="supplier", passive_deletes="all"
     )
 
-    __table_args__ = (
-        UniqueConstraint("name", "user_id", name="uq_supplier_name_user_id"),
-    )
+    __table_args__ = (UniqueConstraint("name", "user_id", name="uq_supplier_name_user_id"),)

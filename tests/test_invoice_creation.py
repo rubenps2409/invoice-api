@@ -79,9 +79,7 @@ def test_creates_the_supplier_when_it_is_new(db, user):
 
 def test_reuses_an_existing_supplier(db, user):
     first = create_invoice_from_extraction(db, user.id, extracted())
-    second = create_invoice_from_extraction(
-        db, user.id, extracted(invoice_number="INV-2")
-    )
+    second = create_invoice_from_extraction(db, user.id, extracted(invoice_number="INV-2"))
 
     assert second.supplier_id == first.supplier_id
     assert count(db, Supplier) == 1
@@ -141,9 +139,7 @@ def test_links_an_existing_category(db, user):
     db.add(category)
     db.commit()
 
-    invoice = create_invoice_from_extraction(
-        db, user.id, extracted(category_name="Software")
-    )
+    invoice = create_invoice_from_extraction(db, user.id, extracted(category_name="Software"))
 
     assert invoice.category_id == category.id
 
@@ -167,9 +163,7 @@ def test_never_links_another_users_category(db, user, other_user):
     db.add(Category(name="Software", user_id=other_user.id))
     db.commit()
 
-    invoice = create_invoice_from_extraction(
-        db, user.id, extracted(category_name="Software")
-    )
+    invoice = create_invoice_from_extraction(db, user.id, extracted(category_name="Software"))
 
     assert invoice.category_id is None
 
@@ -191,9 +185,7 @@ def test_duplicate_number_for_the_same_supplier_raises(db, user):
 def test_same_number_for_another_supplier_is_fine(db, user):
     create_invoice_from_extraction(db, user.id, extracted())
 
-    other = create_invoice_from_extraction(
-        db, user.id, extracted(supplier_name="Globex")
-    )
+    other = create_invoice_from_extraction(db, user.id, extracted(supplier_name="Globex"))
 
     assert other.number == "INV-1"
     assert count(db, Invoice) == 2

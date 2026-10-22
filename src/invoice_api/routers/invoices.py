@@ -41,9 +41,7 @@ def _ensure_references(
     if (
         supplier_id is not None
         and db.scalar(
-            select(Supplier.id).where(
-                Supplier.id == supplier_id, Supplier.user_id == user_id
-            )
+            select(Supplier.id).where(Supplier.id == supplier_id, Supplier.user_id == user_id)
         )
         is None
     ):
@@ -51,9 +49,7 @@ def _ensure_references(
     if (
         category_id is not None
         and db.scalar(
-            select(Category.id).where(
-                Category.id == category_id, Category.user_id == user_id
-            )
+            select(Category.id).where(Category.id == category_id, Category.user_id == user_id)
         )
         is None
     ):

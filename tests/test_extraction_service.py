@@ -166,9 +166,7 @@ def test_json_wrapped_in_noise_is_still_accepted(wrap):
     ],
     ids=["exact", "case-insensitive", "not-in-user-list", "user-has-none", "null"],
 )
-def test_category_is_matched_against_the_users_categories(
-    returned, available, expected
-):
+def test_category_is_matched_against_the_users_categories(returned, available, expected):
     client = FakeClient(reply({**VALID, "category_name": returned}))
 
     result = make_extractor(client).extract("text", available)

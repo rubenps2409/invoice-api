@@ -62,20 +62,14 @@ PASSWORD = "test-password-123"
 
 
 def create_user(client: TestClient, email: str, password: str = PASSWORD) -> dict:
-    response = client.post(
-        "/api/auth/register", json={"email": email, "password": password}
-    )
+    response = client.post("/api/auth/register", json={"email": email, "password": password})
     assert response.status_code == 201, response.text
     return response.json()
 
 
-def login_headers(
-    client: TestClient, email: str, password: str = PASSWORD
-) -> dict[str, str]:
+def login_headers(client: TestClient, email: str, password: str = PASSWORD) -> dict[str, str]:
     # The login endpoint takes form data (OAuth2 spec), hence data= and not json=.
-    response = client.post(
-        "/api/auth/login", data={"username": email, "password": password}
-    )
+    response = client.post("/api/auth/login", data={"username": email, "password": password})
     assert response.status_code == 200, response.text
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 

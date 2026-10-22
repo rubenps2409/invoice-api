@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
@@ -24,6 +24,8 @@ class CaseScore:
     correct: bool
     field_results: dict[str, bool]  # empty for refusal cases
     error: str | None = None  # exception class name, if the extraction failed
+    # field -> (expected, got), only for wrong fields. The data is synthetic.
+    mismatches: dict[str, tuple[str, str]] = field(default_factory=dict)
     attempts: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
@@ -57,27 +59,38 @@ def score_case(
     input_tokens: int = 0,
     output_tokens: int = 0,
 ) -> CaseScore:
-    usage = {
-        "attempts": attempts,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-    }
     error = type(outcome).__name__ if isinstance(outcome, ExtractionError) else None
+    results: dict[str, bool] = {}
+    mismatches: dict[str, tuple[str, str]] = {}
 
     if case.expected is None:
         # The right behaviour is a refusal: the model never produced a valid invoice.
         correct = isinstance(outcome, ExtractionInvalidOutput)
-        return CaseScore(case.id, True, correct, {}, error, **usage)
+    elif isinstance(outcome, ExtractionError):
+        results = dict.fromkeys(FIELDS, False)
+        correct = False
+    else:
+        results = {
+            name: _same(name, case.expected[name], getattr(outcome, name)) for name in FIELDS
+        }
+        mismatches = {
+            name: (str(case.expected[name]), str(getattr(outcome, name)))
+            for name, ok in results.items()
+            if not ok
+        }
+        correct = all(results.values())
 
-    if isinstance(outcome, ExtractionError):
-        results: dict[str, bool] = dict.fromkeys(FIELDS, False)
-        return CaseScore(case.id, False, False, results, error, **usage)
-
-    results = {
-        field: _same(field, case.expected[field], getattr(outcome, field))
-        for field in FIELDS
-    }
-    return CaseScore(case.id, False, all(results.values()), results, None, **usage)
+    return CaseScore(
+        case_id=case.id,
+        expects_refusal=case.expected is None,
+        correct=correct,
+        field_results=results,
+        error=error,
+        mismatches=mismatches,
+        attempts=attempts,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
 
 
 def summarize(scores: list[CaseScore]) -> Summary:
@@ -87,9 +100,7 @@ def summarize(scores: list[CaseScore]) -> Summary:
     def share(items: list[bool]) -> float:
         return sum(items) / len(items) if items else 0.0
 
-    field_accuracy = {
-        f: share([s.field_results[f] for s in extraction]) for f in FIELDS
-    }
+    field_accuracy = {f: share([s.field_results[f] for s in extraction]) for f in FIELDS}
     return Summary(
         extraction_cases=len(extraction),
         refusal_cases=len(refusals),

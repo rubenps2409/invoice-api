@@ -59,9 +59,7 @@ def test_foreign_item_is_indistinguishable_from_a_missing_one(
     assert foreign.json() == missing.json()
 
 
-def test_other_user_cannot_update_item(
-    client, resource, item_of_a, headers_a, headers_b
-):
+def test_other_user_cannot_update_item(client, resource, item_of_a, headers_a, headers_b):
     method, body = UPDATE_REQUEST[resource]
 
     response = client.request(
@@ -73,9 +71,7 @@ def test_other_user_cannot_update_item(
     assert untouched.json() == item_of_a
 
 
-def test_other_user_cannot_delete_item(
-    client, resource, item_of_a, headers_a, headers_b
-):
+def test_other_user_cannot_delete_item(client, resource, item_of_a, headers_a, headers_b):
     response = client.delete(f"/api/{resource}/{item_of_a['id']}", headers=headers_b)
 
     assert response.status_code == 404
@@ -83,9 +79,7 @@ def test_other_user_cannot_delete_item(
     assert still_there.status_code == 200
 
 
-def test_lists_only_contain_own_items(
-    client, resource, item_of_a, headers_a, headers_b
-):
+def test_lists_only_contain_own_items(client, resource, item_of_a, headers_a, headers_b):
     own = client.get(f"/api/{resource}", headers=headers_a).json()
     other = client.get(f"/api/{resource}", headers=headers_b).json()
 
@@ -116,12 +110,8 @@ def test_invoice_filters_do_not_reveal_other_users_data(
     category = make_category(headers_a)
     make_invoice(headers_a, supplier["id"], category_id=category["id"])
 
-    by_supplier = client.get(
-        f"/api/invoices?supplier_id={supplier['id']}", headers=headers_b
-    )
-    by_category = client.get(
-        f"/api/invoices?category_id={category['id']}", headers=headers_b
-    )
+    by_supplier = client.get(f"/api/invoices?supplier_id={supplier['id']}", headers=headers_b)
+    by_category = client.get(f"/api/invoices?category_id={category['id']}", headers=headers_b)
     by_status = client.get("/api/invoices?status=pending", headers=headers_b)
 
     assert by_supplier.json() == []

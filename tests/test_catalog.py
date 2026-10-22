@@ -34,9 +34,7 @@ def test_requires_authentication(client, resource):
 
 
 def test_create_returns_201(client, resource, headers_a):
-    response = client.post(
-        f"/api/{resource}", json={"name": "Alpha"}, headers=headers_a
-    )
+    response = client.post(f"/api/{resource}", json={"name": "Alpha"}, headers=headers_a)
 
     assert response.status_code == 201
     body = response.json()
@@ -59,9 +57,7 @@ def test_create_rejects_invalid_payload(client, resource, headers_a, payload):
 def test_create_duplicate_name_returns_409(client, resource, headers_a, make):
     make(headers_a, name="Alpha")
 
-    response = client.post(
-        f"/api/{resource}", json={"name": "Alpha"}, headers=headers_a
-    )
+    response = client.post(f"/api/{resource}", json={"name": "Alpha"}, headers=headers_a)
 
     assert response.status_code == 409
 
@@ -71,9 +67,7 @@ def test_same_name_is_allowed_for_different_users(
 ):
     make(headers_a, name="Alpha")
 
-    response = client.post(
-        f"/api/{resource}", json={"name": "Alpha"}, headers=headers_b
-    )
+    response = client.post(f"/api/{resource}", json={"name": "Alpha"}, headers=headers_b)
 
     assert response.status_code == 201
 
@@ -170,9 +164,7 @@ MAX_NAME_LENGTH = {"categories": 100, "suppliers": 255}
 def test_name_length_boundary(client, resource, headers_a):
     limit = MAX_NAME_LENGTH[resource]
 
-    at_limit = client.post(
-        f"/api/{resource}", json={"name": "x" * limit}, headers=headers_a
-    )
+    at_limit = client.post(f"/api/{resource}", json={"name": "x" * limit}, headers=headers_a)
     over_limit = client.post(
         f"/api/{resource}", json={"name": "x" * (limit + 1)}, headers=headers_a
     )
@@ -182,9 +174,7 @@ def test_name_length_boundary(client, resource, headers_a):
 
 
 def test_name_is_trimmed(client, resource, headers_a):
-    response = client.post(
-        f"/api/{resource}", json={"name": "  Alpha  "}, headers=headers_a
-    )
+    response = client.post(f"/api/{resource}", json={"name": "  Alpha  "}, headers=headers_a)
 
     assert response.status_code == 201
     assert response.json()["name"] == "Alpha"
@@ -207,9 +197,7 @@ def test_unicode_name_roundtrips(client, resource, headers_a):
     assert fetched["name"] == "ñandú 🙂"
 
 
-@pytest.mark.parametrize(
-    "item_id", ["0", "-1", "abc", "2147483648", "99999999999999999999"]
-)
+@pytest.mark.parametrize("item_id", ["0", "-1", "abc", "2147483648", "99999999999999999999"])
 def test_invalid_id_returns_422(client, resource, headers_a, item_id):
     url = f"/api/{resource}/{item_id}"
 
@@ -248,9 +236,7 @@ def test_update_to_own_current_name_is_allowed(client, resource, headers_a, make
 def test_update_rejects_invalid_payload(client, resource, headers_a, make, payload):
     created = make(headers_a)
 
-    response = client.put(
-        f"/api/{resource}/{created['id']}", json=payload, headers=headers_a
-    )
+    response = client.put(f"/api/{resource}/{created['id']}", json=payload, headers=headers_a)
 
     assert response.status_code == 422
 
@@ -276,8 +262,6 @@ def test_name_can_be_reused_after_delete(client, resource, headers_a, make):
     created = make(headers_a, name="Alpha")
     client.delete(f"/api/{resource}/{created['id']}", headers=headers_a)
 
-    response = client.post(
-        f"/api/{resource}", json={"name": "Alpha"}, headers=headers_a
-    )
+    response = client.post(f"/api/{resource}", json={"name": "Alpha"}, headers=headers_a)
 
     assert response.status_code == 201

@@ -1,0 +1,2963 @@
+{
+  "model": "claude-haiku-5-5",
+  "runs": [
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:26:46+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 201
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 259
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 192
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 162
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 177
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 268
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 423
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2068,
+          "output_tokens": 430
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17944,
+      "output_tokens": 2839,
+      "cost_usd": "0.00321390"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:27:13+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 205
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 204
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 180
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 162
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 177
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 257
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 514
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 624
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 3050,
+      "cost_usd": "0.00331890"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:27:42+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 180
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 286
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 251
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 153
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 105
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 248
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 538
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 405
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 2893,
+      "cost_usd": "0.00324040"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:28:08+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 213
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 206
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 292
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 165
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 244
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 221
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 440
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 447
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 2955,
+      "cost_usd": "0.00327140"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:28:34+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 175
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 208
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 177
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 200
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 244
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 525
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 765
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 3124,
+      "cost_usd": "0.00335590"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:28:59+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 202
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 168
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 251
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 176
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 224
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 440
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 529
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 2820,
+      "cost_usd": "0.00320390"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:29:27+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 202
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 209
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 197
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 164
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 173
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 225
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 526
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 1088
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 3511,
+      "cost_usd": "0.00354940"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:29:54+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 183
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 216
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 198
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 150
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 180
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 226
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 605
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 405
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 2890,
+      "cost_usd": "0.00323890"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:30:19+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 183
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 256
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 202
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 177
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 241
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 732
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 508
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 3129,
+      "cost_usd": "0.00335840"
+    },
+    {
+      "model": "claude-haiku-5-5",
+      "run_at": "2026-10-22T22:30:46+00:00",
+      "scores": [
+        {
+          "case_id": "es_utility_with_due_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1084,
+          "output_tokens": 112
+        },
+        {
+          "case_id": "en_saas_iso_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "es_thousands_and_long_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1029,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "mixed_vat_rates_must_be_summed",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1059,
+          "output_tokens": 206
+        },
+        {
+          "case_id": "credit_note_negative_amounts",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1034,
+          "output_tokens": 103
+        },
+        {
+          "case_id": "vat_exempt_zero_tax",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1027,
+          "output_tokens": 220
+        },
+        {
+          "case_id": "noisy_boilerplate",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1150,
+          "output_tokens": 208
+        },
+        {
+          "case_id": "en_reverse_charge_usd",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1043,
+          "output_tokens": 100
+        },
+        {
+          "case_id": "no_matching_category",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1022,
+          "output_tokens": 176
+        },
+        {
+          "case_id": "ambiguous_numeric_date",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1014,
+          "output_tokens": 102
+        },
+        {
+          "case_id": "several_reference_numbers",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1102,
+          "output_tokens": 177
+        },
+        {
+          "case_id": "prompt_injection_in_notes",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1073,
+          "output_tokens": 229
+        },
+        {
+          "case_id": "large_amount",
+          "expects_refusal": false,
+          "correct": true,
+          "field_results": {
+            "supplier_name": true,
+            "invoice_number": true,
+            "issue_date": true,
+            "base_amount": true,
+            "tax_amount": true,
+            "total_amount": true,
+            "category_name": true
+          },
+          "error": null,
+          "mismatches": {},
+          "attempts": 1,
+          "input_tokens": 1016,
+          "output_tokens": 104
+        },
+        {
+          "case_id": "refuse_not_an_invoice",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2196,
+          "output_tokens": 514
+        },
+        {
+          "case_id": "refuse_fragment",
+          "expects_refusal": true,
+          "correct": true,
+          "field_results": {},
+          "error": "ExtractionInvalidOutput",
+          "mismatches": {},
+          "attempts": 2,
+          "input_tokens": 2063,
+          "output_tokens": 516
+        }
+      ],
+      "summary": {
+        "extraction_cases": 13,
+        "refusal_cases": 2,
+        "field_accuracy": {
+          "supplier_name": 1.0,
+          "invoice_number": 1.0,
+          "issue_date": 1.0,
+          "base_amount": 1.0,
+          "tax_amount": 1.0,
+          "total_amount": 1.0,
+          "category_name": 1.0
+        },
+        "overall_field_accuracy": 1.0,
+        "invoice_accuracy": 1.0,
+        "refusal_accuracy": 1.0
+      },
+      "input_tokens": 17939,
+      "output_tokens": 2973,
+      "cost_usd": "0.00328040"
+    }
+  ],
+  "case_pass_counts": {
+    "es_utility_with_due_date": 10,
+    "en_saas_iso_date": 10,
+    "es_thousands_and_long_date": 10,
+    "mixed_vat_rates_must_be_summed": 10,
+    "credit_note_negative_amounts": 10,
+    "vat_exempt_zero_tax": 10,
+    "noisy_boilerplate": 10,
+    "en_reverse_charge_usd": 10,
+    "no_matching_category": 10,
+    "ambiguous_numeric_date": 10,
+    "several_reference_numbers": 10,
+    "prompt_injection_in_notes": 10,
+    "large_amount": 10,
+    "refuse_not_an_invoice": 10,
+    "refuse_fragment": 10
+  },
+  "cost_usd": "0.03303150"
+}

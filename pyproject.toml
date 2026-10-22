@@ -35,7 +35,7 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 88
+line-length = 95
 target-version = "py313"
 extend-exclude = ["migrations/versions"]
 

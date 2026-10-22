@@ -72,8 +72,7 @@ def reset_demo_data(db: Session, user_id: int) -> None:
 
 def get_or_create_categories(db: Session, user_id: int) -> dict[str, Category]:
     existing = {
-        c.name: c
-        for c in db.scalars(select(Category).where(Category.user_id == user_id))
+        c.name: c for c in db.scalars(select(Category).where(Category.user_id == user_id))
     }
     for name in CATEGORIES:
         if name not in existing:
@@ -85,8 +84,7 @@ def get_or_create_categories(db: Session, user_id: int) -> dict[str, Category]:
 
 def get_or_create_suppliers(db: Session, user_id: int) -> dict[str, Supplier]:
     existing = {
-        s.name: s
-        for s in db.scalars(select(Supplier).where(Supplier.user_id == user_id))
+        s.name: s for s in db.scalars(select(Supplier).where(Supplier.user_id == user_id))
     }
     for name, *_ in SUPPLIERS:
         if name not in existing:
@@ -147,9 +145,7 @@ def seed(db: Session, *, reset: bool) -> None:
     # Skip invoices that already exist so the script can be re-run safely.
     existing = set(
         db.execute(
-            select(Invoice.supplier_id, Invoice.number).where(
-                Invoice.user_id == user.id
-            )
+            select(Invoice.supplier_id, Invoice.number).where(Invoice.user_id == user.id)
         ).all()
     )
     new_invoices = [

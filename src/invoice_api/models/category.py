@@ -20,6 +20,4 @@ class Category(Base):
         back_populates="category", passive_deletes="all"
     )
 
-    __table_args__ = (
-        UniqueConstraint("name", "user_id", name="uq_category_name_user_id"),
-    )
+    __table_args__ = (UniqueConstraint("name", "user_id", name="uq_category_name_user_id"),)
