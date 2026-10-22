@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -14,7 +16,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-     # LLM extraction. The key is optional so the app and the tests run without
+    # LLM extraction. The key is optional so the app and the tests run without
     # it; the extraction service fails with a clear error if it is missing.
     ANTHROPIC_API_KEY: SecretStr | None = None
     LLM_MODEL: str = "claude-haiku-5-5"
@@ -22,6 +24,8 @@ class Settings(BaseSettings):
     LLM_MAX_RETRIES: int = 2
     LLM_MAX_OUTPUT_TOKENS: int = 1024
     MAX_INVOICE_TEXT_CHARS: int = 20_000
+    LLM_INPUT_PRICE_PER_MTOK: Decimal = Decimal("0.10")
+    LLM_OUTPUT_PRICE_PER_MTOK: Decimal = Decimal("0.50")
 
 
 settings = Settings()  # type: ignore

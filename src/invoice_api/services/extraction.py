@@ -152,8 +152,9 @@ class _InvalidOutput(Exception):
 def _wrap(text: str, categories: Sequence[str]) -> str:
     # The closing tag is removed so the text cannot break out of <invoice>.
     safe_text = text.replace("</invoice>", "")
+    category_list = json.dumps(list(categories), ensure_ascii=False)
     return (
-        f"<categories>\n{json.dumps(list(categories), ensure_ascii=False)}\n</categories>\n"
+        f"<categories>\n{category_list}\n</categories>\n"
         f"<invoice>\n{safe_text}\n</invoice>"
     )
 
@@ -224,6 +225,10 @@ class InvoiceExtractor:
         self._model = model
         self._max_output_tokens = max_output_tokens
         self._max_attempts = max_attempts
+
+    @property
+    def model(self) -> str:
+        return self._model
 
     def extract(self, text: str, categories: Sequence[str] = ()) -> ExtractionResult:
         messages = _base_messages(text, categories)
@@ -319,7 +324,8 @@ class InvoiceExtractor:
     def _log(attempt: Attempt) -> None:
         # Never log the invoice text or the model output: it is user data.
         logger.info(
-            "llm_call outcome=%s input_tokens=%d output_tokens=%d latency_ms=%d detail=%s",
+            "llm_call outcome=%s input_tokens=%d output_tokens=%d "
+            "latency_ms=%d detail=%s",
             attempt.outcome,
             attempt.input_tokens,
             attempt.output_tokens,
