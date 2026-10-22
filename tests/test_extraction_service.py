@@ -75,6 +75,10 @@ def _status_error(cls, status):
 # --- happy path -------------------------------------------------------------
 
 
+def test_model_name_is_exposed():
+    assert make_extractor(FakeClient()).model == "test-model"
+
+
 def test_valid_answer_returns_invoice_and_records_tokens():
     client = FakeClient(reply(VALID, input_tokens=1234, output_tokens=56))
 

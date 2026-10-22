@@ -1,0 +1,102 @@
+from dataclasses import dataclass
+from datetime import date
+from decimal import Decimal
+
+from evals.cases import EvalCase
+from invoice_api.schemas.extraction import ExtractedInvoice
+from invoice_api.services.extraction import ExtractionError, ExtractionInvalidOutput
+
+FIELDS = (
+    "supplier_name",
+    "invoice_number",
+    "issue_date",
+    "base_amount",
+    "tax_amount",
+    "total_amount",
+    "category_name",
+)
+
+
+@dataclass(frozen=True)
+class CaseScore:
+    case_id: str
+    expects_refusal: bool
+    correct: bool
+    field_results: dict[str, bool]  # empty for refusal cases
+    error: str | None = None  # exception class name, if the extraction failed
+    attempts: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+
+@dataclass(frozen=True)
+class Summary:
+    extraction_cases: int
+    refusal_cases: int
+    field_accuracy: dict[str, float]
+    overall_field_accuracy: float
+    invoice_accuracy: float  # share of invoices with EVERY field right
+    refusal_accuracy: float | None  # None when there are no refusal cases
+
+
+def _same(field: str, expected: object, actual: object) -> bool:
+    if field in {"base_amount", "tax_amount", "total_amount"}:
+        return Decimal(str(expected)) == actual
+    if field == "supplier_name":
+        return str(expected).strip().casefold() == str(actual).strip().casefold()
+    if field == "issue_date":
+        return isinstance(actual, date) and str(expected) == actual.isoformat()
+    return expected == actual
+
+
+def score_case(
+    case: EvalCase,
+    outcome: ExtractedInvoice | ExtractionError,
+    *,
+    attempts: int = 0,
+    input_tokens: int = 0,
+    output_tokens: int = 0,
+) -> CaseScore:
+    usage = {
+        "attempts": attempts,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens,
+    }
+    error = type(outcome).__name__ if isinstance(outcome, ExtractionError) else None
+
+    if case.expected is None:
+        # The right behaviour is a refusal: the model never produced a valid invoice.
+        correct = isinstance(outcome, ExtractionInvalidOutput)
+        return CaseScore(case.id, True, correct, {}, error, **usage)
+
+    if isinstance(outcome, ExtractionError):
+        results: dict[str, bool] = dict.fromkeys(FIELDS, False)
+        return CaseScore(case.id, False, False, results, error, **usage)
+
+    results = {
+        field: _same(field, case.expected[field], getattr(outcome, field))
+        for field in FIELDS
+    }
+    return CaseScore(case.id, False, all(results.values()), results, None, **usage)
+
+
+def summarize(scores: list[CaseScore]) -> Summary:
+    extraction = [s for s in scores if not s.expects_refusal]
+    refusals = [s for s in scores if s.expects_refusal]
+
+    def share(items: list[bool]) -> float:
+        return sum(items) / len(items) if items else 0.0
+
+    field_accuracy = {
+        f: share([s.field_results[f] for s in extraction]) for f in FIELDS
+    }
+    return Summary(
+        extraction_cases=len(extraction),
+        refusal_cases=len(refusals),
+        field_accuracy=field_accuracy,
+        overall_field_accuracy=share(
+            [ok for s in extraction for ok in s.field_results.values()]
+        ),
+        invoice_accuracy=share([s.correct for s in extraction]),
+        refusal_accuracy=share([s.correct for s in refusals]) if refusals else None,
+    )

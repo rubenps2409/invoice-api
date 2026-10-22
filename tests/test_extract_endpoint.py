@@ -1,0 +1,342 @@
+from decimal import Decimal
+
+import pytest
+from sqlalchemy import select
+
+from invoice_api.config import settings
+from invoice_api.main import app
+from invoice_api.models import LlmCall
+from invoice_api.schemas.extraction import ExtractedInvoice
+from invoice_api.services.extraction import (
+    Attempt,
+    ExtractionInvalidOutput,
+    ExtractionResult,
+    ExtractionTimeout,
+    ExtractionUnavailable,
+    get_extractor,
+)
+
+URL = "/api/invoices/extract"
+TEXT = "FACTURA A-1 Acme S.L. 15/03/2026 Base 100,00 IVA 21,00 Total 121,00"
+
+EXTRACTED = {
+    "supplier_name": "Acme S.L.",
+    "invoice_number": "A-1",
+    "issue_date": "2026-03-15",
+    "base_amount": "100.00",
+    "tax_amount": "21.00",
+    "total_amount": "121.00",
+    "category_name": None,
+}
+OK_ATTEMPT = Attempt("ok", input_tokens=1000, output_tokens=100, latency_ms=900)
+
+
+class FakeExtractor:
+    """Replaces the real extractor: no network, scripted outcome."""
+
+    model = "fake-model"
+
+    def __init__(self, outcome):
+        self.outcome = outcome
+        self.calls = []
+
+    def extract(self, text, categories=()):
+        self.calls.append((text, list(categories)))
+        if isinstance(self.outcome, Exception):
+            raise self.outcome
+        return self.outcome
+
+
+def succeed(attempts=(OK_ATTEMPT,), **overrides):
+    invoice = ExtractedInvoice.model_validate({**EXTRACTED, **overrides})
+    return ExtractionResult(invoice, list(attempts))
+
+
+@pytest.fixture
+def use_extractor(client):
+    def _use(outcome):
+        extractor = FakeExtractor(outcome)
+        app.dependency_overrides[get_extractor] = lambda: extractor
+        return extractor
+
+    return _use
+
+
+def post(client, headers, text=TEXT):
+    return client.post(URL, json={"text": text}, headers=headers)
+
+
+def llm_calls(db):
+    return db.scalars(select(LlmCall).order_by(LlmCall.id)).all()
+
+
+# --- success ----------------------------------------------------------------
+
+
+def test_extracts_and_stores_a_pending_invoice(client, headers_a, use_extractor):
+    use_extractor(succeed())
+
+    response = post(client, headers_a)
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["number"] == "A-1"
+    assert body["status"] == "pending"
+    assert body["total_amount"] == "121.00"
+    assert body["issue_date"] == "2026-03-15"
+    assert "user_id" not in body
+    stored = client.get(f"/api/invoices/{body['id']}", headers=headers_a)
+    assert stored.json() == body
+
+
+def test_a_new_supplier_is_created_and_reused(client, headers_a, use_extractor):
+    use_extractor(succeed())
+    first = post(client, headers_a).json()
+    use_extractor(succeed(invoice_number="A-2"))
+    second = post(client, headers_a).json()
+
+    suppliers = client.get("/api/suppliers", headers=headers_a).json()
+
+    assert [s["name"] for s in suppliers] == ["Acme S.L."]
+    assert first["supplier_id"] == second["supplier_id"] == suppliers[0]["id"]
+
+
+def test_the_extractor_receives_only_the_users_own_categories(
+    client, headers_a, headers_b, make_category, use_extractor
+):
+    make_category(headers_a, name="Software")
+    make_category(headers_a, name="Marketing")
+    make_category(headers_b, name="Secret of B")
+    extractor = use_extractor(succeed())
+
+    post(client, headers_a, text=f"  {TEXT}  ")
+
+    text, categories = extractor.calls[0]
+    assert text == TEXT
+    assert categories == ["Marketing", "Software"]
+
+
+def test_a_matching_category_is_linked(client, headers_a, make_category, use_extractor):
+    category = make_category(headers_a, name="Software")
+    use_extractor(succeed(category_name="Software"))
+
+    response = post(client, headers_a)
+
+    assert response.json()["category_id"] == category["id"]
+
+
+def test_cost_of_the_call_is_recorded(client, db, headers_a, use_extractor):
+    use_extractor(succeed())
+
+    post(client, headers_a)
+
+    (call,) = llm_calls(db)
+    me = client.get("/api/users/me", headers=headers_a).json()
+    assert call.user_id == me["id"]
+    assert call.model == "fake-model"
+    assert call.outcome == "ok"
+    assert (call.input_tokens, call.output_tokens) == (1000, 100)
+    assert call.cost_usd > Decimal(0)
+
+
+# --- request validation -----------------------------------------------------
+
+
+def test_requires_authentication(client, use_extractor):
+    extractor = use_extractor(succeed())
+
+    response = client.post(URL, json={"text": TEXT})
+
+    assert response.status_code == 401
+    assert extractor.calls == []
+
+
+def test_authentication_is_checked_before_configuration(client, monkeypatch):
+    monkeypatch.setattr(settings, "ANTHROPIC_API_KEY", None)
+
+    response = client.post(URL, json={"text": TEXT})
+
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"text": ""},
+        {"text": "   \n  "},
+        {"text": "x" * (settings.MAX_INVOICE_TEXT_CHARS + 1)},
+        {"text": "a\x00b"},
+        {"text": TEXT, "model": "something-expensive"},
+        {"text": 123},
+    ],
+    ids=[
+        "missing",
+        "empty",
+        "blank",
+        "too-long",
+        "nul-character",
+        "extra-field",
+        "not-a-string",
+    ],
+)
+def test_invalid_request_is_rejected_without_calling_the_model(
+    client, db, headers_a, use_extractor, payload
+):
+    extractor = use_extractor(succeed())
+
+    response = client.post(URL, json=payload, headers=headers_a)
+
+    assert response.status_code == 422
+    assert extractor.calls == []
+    assert llm_calls(db) == []
+
+
+def test_text_at_the_size_limit_is_accepted(client, headers_a, use_extractor):
+    extractor = use_extractor(succeed())
+
+    response = post(client, headers_a, text="x" * settings.MAX_INVOICE_TEXT_CHARS)
+
+    assert response.status_code == 201
+    assert len(extractor.calls[0][0]) == settings.MAX_INVOICE_TEXT_CHARS
+
+
+# --- failures: right status, nothing stored, cost still recorded ------------
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_status"),
+    [
+        (
+            ExtractionInvalidOutput(
+                "The model did not return a valid invoice (total_amount: mismatch)",
+                [
+                    Attempt("invalid_output", 900, 40, 800, "total_amount: mismatch"),
+                    Attempt("invalid_output", 950, 40, 800, "total_amount: mismatch"),
+                ],
+            ),
+            422,
+        ),
+        (
+            ExtractionTimeout(
+                "The model took too long to answer",
+                [Attempt("timeout", latency_ms=30000, detail="request timed out")],
+            ),
+            504,
+        ),
+        (
+            ExtractionUnavailable(
+                "The model API returned an error",
+                [Attempt("api_error", latency_ms=200, detail="http 500")],
+            ),
+            502,
+        ),
+    ],
+    ids=["invalid-output", "timeout", "unavailable"],
+)
+def test_extraction_failures_map_to_http_errors(
+    client, db, headers_a, use_extractor, error, expected_status
+):
+    use_extractor(error)
+
+    response = post(client, headers_a)
+
+    assert response.status_code == expected_status
+    assert response.json()["detail"] == str(error)
+    assert client.get("/api/invoices", headers=headers_a).json() == []
+    assert client.get("/api/suppliers", headers=headers_a).json() == []
+    assert [c.outcome for c in llm_calls(db)] == [a.outcome for a in error.attempts]
+
+
+def test_failed_attempts_are_recorded_for_the_right_user(
+    client, db, headers_a, headers_b, use_extractor
+):
+    use_extractor(
+        ExtractionTimeout("slow", [Attempt("timeout", latency_ms=30000, detail="t")])
+    )
+
+    post(client, headers_b)
+
+    (call,) = llm_calls(db)
+    me_b = client.get("/api/users/me", headers=headers_b).json()
+    assert call.user_id == me_b["id"]
+
+
+def test_error_responses_do_not_echo_the_invoice_text(client, headers_a, use_extractor):
+    secret = "SECRET-CUSTOMER-DATA"
+    use_extractor(
+        ExtractionInvalidOutput("The model did not return a valid invoice", [])
+    )
+
+    response = post(client, headers_a, text=secret)
+
+    assert secret not in response.text
+
+
+def test_missing_api_key_returns_503(client, db, headers_a, monkeypatch):
+    monkeypatch.setattr(settings, "ANTHROPIC_API_KEY", None)
+
+    response = post(client, headers_a)
+
+    assert response.status_code == 503
+    assert llm_calls(db) == []
+
+
+def test_503_does_not_reveal_configuration_details(client, headers_a, monkeypatch):
+    monkeypatch.setattr(settings, "ANTHROPIC_API_KEY", None)
+
+    response = post(client, headers_a)
+
+    assert "ANTHROPIC" not in response.text
+    assert "key" not in response.text.lower()
+
+
+# --- duplicates -------------------------------------------------------------
+
+
+def test_duplicate_invoice_returns_409_but_the_cost_is_kept(
+    client, db, headers_a, use_extractor
+):
+    use_extractor(succeed())
+    first = post(client, headers_a)
+
+    second = post(client, headers_a)
+
+    assert first.status_code == 201
+    assert second.status_code == 409
+    assert len(client.get("/api/invoices", headers=headers_a).json()) == 1
+    assert len(llm_calls(db)) == 2  # both calls spent tokens
+
+
+def test_other_users_can_extract_the_same_invoice(
+    client, headers_a, headers_b, use_extractor
+):
+    use_extractor(succeed())
+    a = post(client, headers_a)
+
+    b = post(client, headers_b)
+
+    assert (a.status_code, b.status_code) == (201, 201)
+    assert a.json()["id"] != b.json()["id"]
+    assert a.json()["supplier_id"] != b.json()["supplier_id"]
+
+
+def test_extracted_invoices_are_isolated_between_users(
+    client, headers_a, headers_b, use_extractor
+):
+    use_extractor(succeed())
+    invoice = post(client, headers_a).json()
+
+    assert (
+        client.get(f"/api/invoices/{invoice['id']}", headers=headers_b).status_code
+        == 404
+    )
+    assert client.get("/api/invoices", headers=headers_b).json() == []
+
+
+# --- routing ----------------------------------------------------------------
+
+
+def test_extract_path_is_not_read_as_an_invoice_id(client, headers_a):
+    assert client.get(URL, headers=headers_a).status_code == 422
+    assert client.delete(URL, headers=headers_a).status_code == 422

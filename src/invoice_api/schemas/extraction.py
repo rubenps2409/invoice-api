@@ -1,8 +1,15 @@
 from datetime import date
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    StringConstraints,
+    field_validator,
+    model_validator,
+)
 
+from invoice_api.config import settings
 from invoice_api.schemas.common import Money, Str100, Str255
 from invoice_api.schemas.invoice import check_totals
 
@@ -26,3 +33,25 @@ class ExtractedInvoice(BaseModel):
     def _totals_match(self) -> Self:
         check_totals(self.base_amount, self.tax_amount, self.total_amount)
         return self
+
+
+class ExtractionRequest(BaseModel):
+    """Body of the extraction endpoint. The size limit bounds the cost of a call."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: Annotated[
+        str,
+        StringConstraints(
+            strip_whitespace=True,
+            min_length=1,
+            max_length=settings.MAX_INVOICE_TEXT_CHARS,
+        ),
+    ]
+
+    @field_validator("text")
+    @classmethod
+    def _reject_nul(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("must not contain NUL characters")
+        return value

@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
+from psycopg.errors import NotNullViolation
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
@@ -204,3 +205,13 @@ def test_same_number_and_supplier_for_another_user_is_fine(db, user, other_user)
     create_invoice_from_extraction(db, other_user.id, extracted())
 
     assert count(db, Invoice) == 2
+
+
+def test_other_commit_errors_are_not_reported_as_duplicates(db, user, monkeypatch):
+    def failing_commit():
+        raise IntegrityError("INSERT ...", {}, NotNullViolation("null value"))
+
+    monkeypatch.setattr(db, "commit", failing_commit)
+
+    with pytest.raises(IntegrityError):
+        create_invoice_from_extraction(db, user.id, extracted())
