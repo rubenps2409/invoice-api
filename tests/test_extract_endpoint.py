@@ -116,6 +116,28 @@ def test_the_extractor_receives_only_the_users_own_categories(
     assert categories == ["Marketing", "Software"]
 
 
+def test_no_transaction_is_held_open_while_the_model_runs(
+    client, db, headers_a, make_category, use_extractor
+):
+    # An open transaction keeps a pooled DB connection checked out for as long
+    # as the (slow) model call lasts, which can starve the rest of the API.
+    make_category(headers_a, name="Software")
+    extractor = use_extractor(succeed())
+    in_transaction_during_call = []
+    original_extract = extractor.extract
+
+    def spy(text, categories=()):
+        in_transaction_during_call.append(db.in_transaction())
+        return original_extract(text, categories)
+
+    extractor.extract = spy
+
+    response = post(client, headers_a)
+
+    assert response.status_code == 201
+    assert in_transaction_during_call == [False]
+
+
 def test_a_matching_category_is_linked(client, headers_a, make_category, use_extractor):
     category = make_category(headers_a, name="Software")
     use_extractor(succeed(category_name="Software"))

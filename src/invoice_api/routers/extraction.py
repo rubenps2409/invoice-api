@@ -53,6 +53,10 @@ def extract_invoice(
         select(Category.name).where(Category.user_id == user_id).order_by(Category.name)
     ).all()
 
+    # The user lookup and the query above opened a transaction. End it so the
+    # pooled connection is not held while the (slow) model call runs.
+    db.rollback()
+
     try:
         result = extractor.extract(data.text, categories)
     except ExtractionError as exc:
