@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
     <meta name="referrer" content="no-referrer" />
-    <!-- Only this page's own files may run or load, and it may only talk to its own server. -->
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'"
-    />
+    <!-- The Content-Security-Policy is sent as a header by the server (see main.py). -->
     <title>Invoice API</title>
     <link
       rel="icon"

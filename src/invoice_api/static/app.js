@@ -31,7 +31,8 @@ setUnauthorizedHandler(() => showAuth(text.auth.expired));
 
 function currentTab() {
   const tab = window.location.hash.slice(1);
-  return tab in views ? tab : DEFAULT_TAB;
+  // hasOwn, not `in`: #constructor or #__proto__ must not pick something from Object.prototype.
+  return Object.hasOwn(views, tab) ? tab : DEFAULT_TAB;
 }
 
 function go(tab) {

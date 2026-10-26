@@ -9,7 +9,9 @@ import { store } from "./store.js";
 const MAX_CHARS = 20_000;
 
 export function statusBadge(status) {
-  return h("span", { class: `badge ${status}` }, text.statuses[status] ?? status);
+  // Only a known status becomes a CSS class or a label from the table.
+  const known = Object.hasOwn(text.statuses, status);
+  return h("span", { class: known ? `badge ${status}` : "badge" }, known ? text.statuses[status] : String(status));
 }
 
 function slip(invoice, { onAnother, onViewAll }) {

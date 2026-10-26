@@ -38,9 +38,10 @@ The project uses a `src` layout:
     step, no dependencies), served by `main.py` at `/` and `/static`. It only
     uses the existing `/api` endpoints. Rules, kept by `tests/test_frontend.py`:
     never build markup from strings (`h()` in `dom.js` makes text nodes), keep
-    the page's Content-Security-Policy `<meta>` (it must not cover `/docs`),
-    no inline scripts or styles, no third-party URLs, all UI text in
-    `strings.js`.
+    the Content-Security-Policy and the other security headers that `main.py`
+    sends with the page (they must not cover `/docs`, which loads code from a
+    CDN), no inline scripts or styles, no third-party URLs, never test a key
+    with `in` (use `Object.hasOwn`), all UI text in `strings.js`.
 -   `src/invoice_api/security.py` and `dependencies.py`: token/password
     security and shared request dependencies. The app is async end to end
     (`AsyncSession`, `AsyncAnthropic`): endpoints, dependencies and services are

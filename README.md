@@ -74,8 +74,11 @@ build step and no dependencies, served by the same FastAPI app, so there is no C
 and nothing else to deploy. The API itself was not changed for it.
 
 - The page never turns text into HTML (supplier names and invoice text are shown as text nodes),
-  its Content-Security-Policy only allows its own files, and the token lives in `sessionStorage`,
-  so it disappears with the tab. Tests keep these rules.
+  the server sends a Content-Security-Policy that only allows the page's own files (plus
+  `frame-ancestors 'none'`, `nosniff` and other hardening headers), and the token lives in
+  `sessionStorage`, so it disappears with the tab. Tests keep these rules, and the page was also
+  tried in a real browser with hostile names (`<img onerror=…>`, `<script>`) stored through the
+  API: they show up as plain text and nothing runs.
 - The API returns ids, not names, so the page also reads the suppliers and categories lists to
   show names.
 

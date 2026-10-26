@@ -72,18 +72,46 @@ async def test_the_page_is_not_part_of_the_api_schema(client):
 # --- what the page may do ---------------------------------------------------------
 
 
-def test_the_policy_only_allows_the_pages_own_files_and_server():
-    html = index_html()
-    policy = re.search(r'http-equiv="Content-Security-Policy"\s+content="([^"]+)"', html)
+async def test_the_policy_only_allows_the_pages_own_files_and_server(client):
+    response = await client.get("/")
 
-    assert policy, "the page must declare a Content-Security-Policy"
-    directives = dict(
-        part.strip().split(" ", 1) for part in policy[1].split(";") if part.strip()
-    )
+    policy = response.headers["content-security-policy"]
+    directives = dict(part.strip().split(" ", 1) for part in policy.split(";") if part.strip())
     assert directives["default-src"] == "'none'"
     assert directives["script-src"] == "'self'"
+    assert directives["style-src"] == "'self'"
     assert directives["connect-src"] == "'self'"
-    assert "unsafe" not in policy[1]
+    assert directives["base-uri"] == "'none'"
+    assert directives["frame-ancestors"] == "'none'"
+    assert "unsafe" not in policy
+
+
+async def test_the_other_security_headers_of_the_page(client):
+    headers = (await client.get("/")).headers
+
+    assert headers["permissions-policy"].startswith("camera=()")
+    assert headers["cross-origin-opener-policy"] == "same-origin"
+    assert headers["cross-origin-resource-policy"] == "same-origin"
+    assert headers["referrer-policy"] == "no-referrer"
+
+
+async def test_the_static_files_carry_the_same_headers(client):
+    headers = (await client.get("/static/app.js")).headers
+
+    assert "frame-ancestors" in headers["content-security-policy"]
+    assert headers["x-content-type-options"] == "nosniff"
+
+
+async def test_the_docs_do_not_get_the_pages_policy(client):
+    # The Swagger UI loads its code from a CDN: the page's policy would break it.
+    assert "content-security-policy" not in (await client.get("/docs")).headers
+
+
+def test_the_hash_cannot_pick_something_from_object_prototype():
+    app_js = (_STATIC_DIR / "app.js").read_text(encoding="utf-8")
+
+    assert "Object.hasOwn(views" in app_js
+    assert not re.search(r"in views", app_js)
 
 
 def test_the_page_has_no_inline_code_or_styles():

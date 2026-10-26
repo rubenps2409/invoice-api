@@ -24,11 +24,21 @@ from invoice_api.services.extraction import ExtractionNotConfigured, close_clien
 
 # The web page lives inside the package, so it is installed with it.
 _STATIC_DIR = Path(__file__).parent / "static"
+# Only the page's own files may run or load, and it may only talk to its own server. Sent as
+# a header (not a <meta>) so it also covers framing, and only on the page: /docs keeps working.
+_CONTENT_SECURITY_POLICY = (
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+    "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
 _PAGE_HEADERS = {
+    "Content-Security-Policy": _CONTENT_SECURITY_POLICY,
     "Cache-Control": "no-cache",  # revalidate (ETag) so a deploy is seen at once
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
 }
 
 
