@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Path, Query, status
+from fastapi import Depends, HTTPException, Path, Query, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -38,6 +38,16 @@ def get_current_user_id(user: CurrentUser) -> int:
 
 
 CurrentUserId = Annotated[int, Depends(get_current_user_id)]
+
+
+def get_client_ip(request: Request) -> str:
+    """The IP the server sees. Behind a proxy that is the proxy's, unless uvicorn
+    runs with --proxy-headers and --forwarded-allow-ips set to the proxy: never
+    read X-Forwarded-For here, any client could forge it."""
+    return request.client.host if request.client else "unknown"
+
+
+ClientIp = Annotated[str, Depends(get_client_ip)]
 
 IdPath = Annotated[int, Path(ge=1, le=POSTGRES_INT_MAX)]
 
