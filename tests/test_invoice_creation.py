@@ -24,6 +24,7 @@ def extracted(**overrides) -> ExtractedInvoice:
         "base_amount": "100.00",
         "tax_amount": "21.00",
         "total_amount": "121.00",
+        "currency": "EUR",
         "category_name": None,
     }
     return ExtractedInvoice.model_validate({**data, **overrides})

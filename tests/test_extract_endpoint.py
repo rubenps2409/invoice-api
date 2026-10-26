@@ -27,6 +27,7 @@ EXTRACTED = {
     "base_amount": "100.00",
     "tax_amount": "21.00",
     "total_amount": "121.00",
+    "currency": "EUR",
     "category_name": None,
 }
 OK_ATTEMPT = Attempt(AttemptOutcome.OK, input_tokens=1000, output_tokens=100, latency_ms=900)
@@ -199,6 +200,49 @@ def test_a_name_variant_of_a_known_supplier_is_a_duplicate_invoice(
     assert response.status_code == 409
     assert len(client.get("/api/suppliers", headers=headers_a).json()) == 1
     assert len(client.get("/api/invoices", headers=headers_a).json()) == 1
+
+
+def test_the_withholding_and_the_currency_are_stored(client, headers_a, use_extractor):
+    use_extractor(
+        succeed(
+            base_amount="1000.00",
+            tax_amount="210.00",
+            withholding_amount="150.00",
+            total_amount="1060.00",
+            currency="usd",
+        )
+    )
+
+    body = post(client, headers_a).json()
+
+    assert body["withholding_amount"] == "150.00"
+    assert body["currency"] == "USD"
+    assert body["tax_amount"] == "210.00"
+    assert client.get(f"/api/invoices/{body['id']}", headers=headers_a).json() == body
+
+
+def test_an_invoice_without_withholding_is_stored_with_zero(client, headers_a, use_extractor):
+    use_extractor(succeed())
+
+    body = post(client, headers_a).json()
+
+    assert body["withholding_amount"] == "0.00"
+    assert body["currency"] == "EUR"
+
+
+def test_amounts_from_a_model_that_returns_floats_show_two_decimals(
+    client, headers_a, use_extractor
+):
+    use_extractor(succeed(base_amount=84.3, tax_amount=17.7, total_amount=102.0))
+
+    body = post(client, headers_a).json()
+
+    assert (body["base_amount"], body["tax_amount"], body["total_amount"]) == (
+        "84.30",
+        "17.70",
+        "102.00",
+    )
+    assert client.get(f"/api/invoices/{body['id']}", headers=headers_a).json() == body
 
 
 def test_a_matching_category_is_linked(client, headers_a, make_category, use_extractor):

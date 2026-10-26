@@ -13,7 +13,7 @@ from invoice_api.schemas.invoice import (
     InvoiceCreate,
     InvoiceRead,
     InvoiceUpdate,
-    check_totals,
+    check_amounts,
 )
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
@@ -122,9 +122,10 @@ def update_invoice(
 
     # The schema only sees the request body; validate the merged state.
     try:
-        check_totals(
+        check_amounts(
             changes.get("base_amount", invoice.base_amount),
             changes.get("tax_amount", invoice.tax_amount),
+            changes.get("withholding_amount", invoice.withholding_amount),
             changes.get("total_amount", invoice.total_amount),
         )
     except ValueError as exc:

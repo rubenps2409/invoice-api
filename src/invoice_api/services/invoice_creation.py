@@ -125,7 +125,9 @@ def create_invoice_from_extraction(
         issue_date=extracted.issue_date,
         base_amount=extracted.base_amount,
         tax_amount=extracted.tax_amount,
+        withholding_amount=extracted.withholding_amount,
         total_amount=extracted.total_amount,
+        currency=extracted.currency,
         status=InvoiceStatus.PENDING,
     )
     db.add(invoice)

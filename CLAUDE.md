@@ -7,8 +7,11 @@ structured data from invoice text with an Anthropic LLM and storing the
 resulting invoice for the authenticated user.
 
 The extraction contract currently uses these fields: - `supplier_name` -
-`invoice_number` - `issue_date` - `base_amount` - `tax_amount` -
-`total_amount` - `category_name` (optional)
+`supplier_tax_id` (optional) - `invoice_number` - `issue_date` -
+`base_amount` (taxable base, after discounts) - `tax_amount` -
+`withholding_amount` (optional, defaults to 0; subtracted from the total) -
+`total_amount` - `currency` (ISO 4217, required, never assumed) -
+`category_name` (optional)
 
 The current flow is intended to validate the model output with Pydantic
 before creating database records. Do not assume extraction is always
@@ -167,7 +170,13 @@ Current design choices visible in the code: - A system prompt requests a
 single JSON object with a fixed field contract. - The prompt treats
 invoice contents as untrusted data and includes few-shot examples. -
 Pydantic validates the extracted schema and checks that base amount +
-tax amount matches total amount. - The category is matched against the
+tax amount - withholding amount matches total amount, within one cent
+(`check_amounts` in `schemas/invoice.py`, shared with the manual
+endpoints); base, tax and withholding must also share a sign. - The
+extracted total must be printed in the invoice text
+(`_check_total_is_printed`): when the printed figures do not add up, a
+model tends to recompute the total and silently drop an amount, so a
+recomputed total is rejected and retried. - The category is matched against the
 authenticated user's categories; an unmatched category becomes `None`. -
 Output-validation attempts and provider/network failures are handled
 separately from HTTP status mapping. - The request endpoint records LLM

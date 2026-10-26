@@ -1,10 +1,12 @@
 from datetime import date
+from decimal import Decimal
 from typing import Annotated, Self
 
 from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    Field,
     StringConstraints,
     field_validator,
     model_validator,
@@ -12,8 +14,8 @@ from pydantic import (
 
 from invoice_api.config import settings
 from invoice_api.normalization import normalize_tax_id
-from invoice_api.schemas.common import Money, Str100, Str255
-from invoice_api.schemas.invoice import check_totals
+from invoice_api.schemas.common import Currency, Money, Str100, Str255
+from invoice_api.schemas.invoice import check_amounts
 
 
 def _tax_id_or_none(value: object) -> str | None:
@@ -38,12 +40,19 @@ class ExtractedInvoice(BaseModel):
     issue_date: date
     base_amount: Money
     tax_amount: Money
+    # No withholding is by far the common case; if the model leaves it out when
+    # the invoice has one, the totals check fails and nothing is saved.
+    withholding_amount: Money = Field(default=Decimal(0), validate_default=True)
     total_amount: Money
+    # Required: a currency is never assumed (a bare "$" could be many).
+    currency: Currency
     category_name: Str100 | None = None
 
     @model_validator(mode="after")
     def _totals_match(self) -> Self:
-        check_totals(self.base_amount, self.tax_amount, self.total_amount)
+        check_amounts(
+            self.base_amount, self.tax_amount, self.withholding_amount, self.total_amount
+        )
         return self
 
 

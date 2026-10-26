@@ -13,7 +13,9 @@ FIELDS = (
     "issue_date",
     "base_amount",
     "tax_amount",
+    "withholding_amount",
     "total_amount",
+    "currency",
     "category_name",
 )
 
@@ -43,13 +45,22 @@ class Summary:
 
 
 def _same(field: str, expected: object, actual: object) -> bool:
-    if field in {"base_amount", "tax_amount", "total_amount"}:
+    if field in {"base_amount", "tax_amount", "withholding_amount", "total_amount"}:
         return Decimal(str(expected)) == actual
     if field == "supplier_name":
         return str(expected).strip().casefold() == str(actual).strip().casefold()
     if field == "issue_date":
         return isinstance(actual, date) and str(expected) == actual.isoformat()
     return expected == actual
+
+
+def _figures(invoice: ExtractedInvoice) -> str:
+    """Amounts and currency only: no names and no text of the invoice."""
+    return (
+        f"base={invoice.base_amount} tax={invoice.tax_amount} "
+        f"withholding={invoice.withholding_amount} total={invoice.total_amount} "
+        f"currency={invoice.currency}"
+    )
 
 
 def score_case(
@@ -67,6 +78,9 @@ def score_case(
     if case.expected is None:
         # The right behaviour is a refusal: the model never produced a valid invoice.
         correct = isinstance(outcome, ExtractionInvalidOutput)
+        if isinstance(outcome, ExtractedInvoice):
+            # It made up an invoice instead: show the figures it settled on.
+            mismatches = {"returned_instead_of_refusing": ("a refusal", _figures(outcome))}
     elif isinstance(outcome, ExtractionError):
         results = dict.fromkeys(FIELDS, False)
         correct = False

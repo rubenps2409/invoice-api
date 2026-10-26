@@ -32,7 +32,9 @@ CASE = EvalCase(
         "issue_date": "2026-03-15",
         "base_amount": "100.00",
         "tax_amount": "21.00",
+        "withholding_amount": "0.00",
         "total_amount": "121.00",
+        "currency": "EUR",
         "category_name": "Utilities",
     },
 )
@@ -147,6 +149,52 @@ def test_refusal_cases_are_correct_only_when_the_output_was_invalid():
     assert score_case(REFUSAL, refused).correct
     assert not score_case(REFUSAL, timed_out).correct  # an outage is not a refusal
     assert not score_case(REFUSAL, invoice()).correct  # invented an invoice
+
+
+def test_an_invented_invoice_shows_the_figures_but_no_names():
+    made_up = invoice(
+        supplier_name="Secret Supplier S.L.",
+        base_amount="645.00",
+        tax_amount="126.00",
+        total_amount="771.00",
+        currency="USD",
+    )
+
+    score = score_case(REFUSAL, made_up)
+
+    assert not score.correct
+    expected, got = score.mismatches["returned_instead_of_refusing"]
+    assert expected == "a refusal"
+    assert got == "base=645.00 tax=126.00 withholding=0.00 total=771.00 currency=USD"
+    assert "Secret" not in got
+
+
+def test_a_real_refusal_or_an_outage_adds_no_mismatch():
+    refused = ExtractionInvalidOutput("no invoice", [Attempt(AttemptOutcome.INVALID_OUTPUT)])
+    timed_out = ExtractionTimeout("slow", [Attempt(AttemptOutcome.TIMEOUT)])
+
+    assert score_case(REFUSAL, refused).mismatches == {}
+    assert score_case(REFUSAL, timed_out).mismatches == {}
+
+
+def test_the_repeated_report_counts_what_the_model_invented_instead_of_refusing():
+    class Inventor:
+        model = "m"
+
+        def extract(self, text, categories):
+            return ExtractionResult(
+                invoice(base_amount="645.00", tax_amount="126.00", total_amount="771.00"),
+                [Attempt(AttemptOutcome.OK)],
+            )
+
+    only_refusal = (EvalCase(id="r1", description="d", text="x", expected=None),)
+
+    report = run_eval_repeated(Inventor(), 3, only_refusal)
+
+    assert report.case_pass_counts() == {"r1": 0}
+    assert "returned_instead_of_refusing" in format_repeated(report)
+    assert "base=645.00" in format_repeated(report)
+    assert "(3x)" in format_repeated(report)
 
 
 def test_usage_is_carried_into_the_score():

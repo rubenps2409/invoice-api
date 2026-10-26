@@ -1,6 +1,12 @@
+from decimal import Decimal
+
 import pytest
 
-from invoice_api.normalization import normalize_tax_id, supplier_name_key
+from invoice_api.normalization import (
+    normalize_tax_id,
+    printed_amounts,
+    supplier_name_key,
+)
 
 # --- tax ids ----------------------------------------------------------------
 
@@ -99,3 +105,41 @@ def test_accents_are_ignored():
     assert supplier_name_key("Papelería El Cuaderno") == supplier_name_key(
         "PAPELERIA EL CUADERNO"
     )
+
+
+# --- amounts printed in an invoice -----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "amount"),
+    [
+        ("Total: 1.512,50 €", "1512.50"),
+        ("Total 1,512.50", "1512.50"),
+        ("Total: 1512.50", "1512.50"),
+        ("Total 1 512,50 EUR", "1512.50"),
+        ("Total 1\u00a0512,50 EUR", "1512.50"),
+        ("Total CHF 1'512.50", "1512.50"),
+        ("Total abono: -54,45 €", "54.45"),
+        ("Total 130.00", "130.00"),
+        ("Total 12", "12.00"),
+        ("TOTAL 101.942,50", "101942.50"),
+        ("Importe 1.234", "1234.00"),  # a thousands separator...
+        ("Importe 1.234", "1.23"),  # ...or a decimal point: both readings are kept
+        ("Total 1.512.000,00", "1512000.00"),
+        ("Total 1.512.000", "1512000.00"),  # repeated separators can only group digits
+        ("Total 1,512,000", "1512000.00"),
+    ],
+)
+def test_printed_amounts_reads_the_usual_number_formats(text, amount):
+    assert Decimal(amount) in printed_amounts(text)
+
+
+def test_printed_amounts_does_not_invent_a_sum():
+    text = "Base 600,00 IVA 126,00 Suplidos 45,00 TOTAL 771,00"
+
+    assert Decimal("771.00") in printed_amounts(text)
+    assert Decimal("726.00") not in printed_amounts(text)  # base + tax: never printed
+
+
+def test_printed_amounts_of_a_text_without_numbers_is_empty():
+    assert printed_amounts("No amounts here") == set()

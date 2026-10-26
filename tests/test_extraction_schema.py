@@ -13,6 +13,7 @@ VALID = {
     "base_amount": "100.00",
     "tax_amount": "21.00",
     "total_amount": "121.00",
+    "currency": "EUR",
     "category_name": "Software",
 }
 
@@ -34,7 +35,7 @@ def test_json_numbers_are_accepted_as_amounts():
     """LLMs usually emit JSON numbers (floats), not strings."""
     raw = (
         '{"supplier_name": "Acme", "invoice_number": "1", "issue_date": "2026-01-02",'
-        ' "base_amount": 33.1, "tax_amount": 6.95, "total_amount": 40.05}'
+        ' "base_amount": 33.1, "tax_amount": 6.95, "total_amount": 40.05, "currency": "EUR"}'
     )
 
     invoice = ExtractedInvoice.model_validate(json.loads(raw))
@@ -61,6 +62,113 @@ def test_an_unusable_tax_id_is_dropped_instead_of_rejecting_the_invoice(value):
     assert invoice.supplier_name == "Acme S.L."
 
 
+def test_withholding_defaults_to_zero():
+    assert make().withholding_amount == Decimal("0")
+
+
+def test_an_invoice_with_a_withholding_is_valid_with_the_honest_figures():
+    invoice = make(
+        base_amount="1000.00",
+        tax_amount="210.00",
+        withholding_amount="150.00",
+        total_amount="1060.00",
+    )
+
+    assert invoice.tax_amount == Decimal("210.00")  # the tax is not reduced
+    assert invoice.withholding_amount == Decimal("150.00")
+
+
+def test_a_withholding_left_out_of_an_invoice_that_has_one_is_rejected():
+    """The model forgot the withholding: the totals no longer add up."""
+    with pytest.raises(ValidationError):
+        make(base_amount="1000.00", tax_amount="210.00", total_amount="1060.00")
+
+
+@pytest.mark.parametrize(
+    ("total", "valid"),
+    [
+        ("121.00", True),
+        ("121.01", True),
+        ("120.99", True),
+        ("121.02", False),
+        ("120.98", False),
+    ],
+)
+def test_the_total_may_be_one_cent_off(total, valid):
+    if valid:
+        assert make(total_amount=total).total_amount == Decimal(total)
+    else:
+        with pytest.raises(ValidationError):
+            make(total_amount=total)
+
+
+def test_amounts_are_normalised_to_two_decimals():
+    invoice = make(base_amount=33.1, tax_amount=6.95, total_amount=40.05)
+
+    assert [
+        str(a) for a in (invoice.base_amount, invoice.tax_amount, invoice.total_amount)
+    ] == [
+        "33.10",
+        "6.95",
+        "40.05",
+    ]
+    assert str(invoice.withholding_amount) == "0.00"
+
+
+def test_a_negative_withholding_cannot_absorb_an_unmodelled_amount():
+    """Non-taxable expenses (45) hidden as a negative withholding would add up:
+    600 + 126 - (-45) = 771. A normal invoice cannot have mixed signs."""
+    with pytest.raises(ValidationError, match="be positive or all negative"):
+        make(
+            base_amount="600.00",
+            tax_amount="126.00",
+            withholding_amount="-45.00",
+            total_amount="771.00",
+        )
+
+
+def test_a_credit_note_reverses_every_amount_including_the_withholding():
+    invoice = make(
+        base_amount="-500.00",
+        tax_amount="-105.00",
+        withholding_amount="-75.00",
+        total_amount="-530.00",
+    )
+
+    assert invoice.withholding_amount == Decimal("-75.00")
+
+
+def test_a_credit_note_whose_withholding_keeps_its_positive_sign_is_rejected():
+    # The model copied the printed +75: the retry feedback must point at the signs.
+    with pytest.raises(ValidationError, match="be positive or all negative"):
+        make(
+            base_amount="-500.00",
+            tax_amount="-105.00",
+            withholding_amount="75.00",
+            total_amount="-680.00",
+        )
+
+
+def test_currency_is_required():
+    payload = {k: v for k, v in VALID.items() if k != "currency"}
+
+    with pytest.raises(ValidationError):
+        ExtractedInvoice.model_validate(payload)
+
+
+@pytest.mark.parametrize("currency", [None, "", "EURO", "€", "E1R", 978, ["EUR"]])
+def test_an_unusable_currency_is_rejected_not_guessed(currency):
+    with pytest.raises(ValidationError):
+        make(currency=currency)
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"), [("EUR", "EUR"), ("eur", "EUR"), (" usd ", "USD")]
+)
+def test_currency_is_upper_cased(raw, expected):
+    assert make(currency=raw).currency == expected
+
+
 def test_category_may_be_missing():
     payload = {k: v for k, v in VALID.items() if k != "category_name"}
 
@@ -72,9 +180,9 @@ def test_category_may_be_null():
 
 
 def test_unknown_keys_are_ignored():
-    invoice = make(currency="EUR", notes="thanks")
+    invoice = make(language="es", notes="thanks")
 
-    assert not hasattr(invoice, "currency")
+    assert not hasattr(invoice, "language")
 
 
 def test_text_fields_are_trimmed():

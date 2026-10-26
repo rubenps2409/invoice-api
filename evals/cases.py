@@ -48,7 +48,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-02-05",
             "base_amount": "118.40",
             "tax_amount": "24.86",
+            "withholding_amount": "0.00",
             "total_amount": "143.26",
+            "currency": "EUR",
             "category_name": "Utilities",
         },
     ),
@@ -71,7 +73,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-03-01",
             "base_amount": "480.00",
             "tax_amount": "100.80",
+            "withholding_amount": "0.00",
             "total_amount": "580.80",
+            "currency": "EUR",
             "category_name": "Software and licenses",
         },
     ),
@@ -94,7 +98,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-03-12",
             "base_amount": "2400.00",
             "tax_amount": "504.00",
+            "withholding_amount": "0.00",
             "total_amount": "2904.00",
+            "currency": "EUR",
             "category_name": "Marketing",
         },
     ),
@@ -116,7 +122,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-04-22",
             "base_amount": "170.00",
             "tax_amount": "19.20",
+            "withholding_amount": "0.00",
             "total_amount": "189.20",
+            "currency": "EUR",
             "category_name": "Travel and meals",
         },
     ),
@@ -140,7 +148,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-05-03",
             "base_amount": "-45.00",
             "tax_amount": "-9.45",
+            "withholding_amount": "0.00",
             "total_amount": "-54.45",
+            "currency": "EUR",
             "category_name": "Office supplies",
         },
     ),
@@ -163,7 +173,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-06-30",
             "base_amount": "300.00",
             "tax_amount": "0.00",
+            "withholding_amount": "0.00",
             "total_amount": "300.00",
+            "currency": "EUR",
             "category_name": "Professional services",
         },
     ),
@@ -192,7 +204,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-07-01",
             "base_amount": "34.71",
             "tax_amount": "7.29",
+            "withholding_amount": "0.00",
             "total_amount": "42.00",
+            "currency": "EUR",
             "category_name": "Utilities",
         },
     ),
@@ -215,7 +229,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-08-14",
             "base_amount": "120.00",
             "tax_amount": "0.00",
+            "withholding_amount": "0.00",
             "total_amount": "120.00",
+            "currency": "USD",
             "category_name": "Software and licenses",
         },
     ),
@@ -238,7 +254,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-09-25",
             "base_amount": "49.59",
             "tax_amount": "10.41",
+            "withholding_amount": "0.00",
             "total_amount": "60.00",
+            "currency": "EUR",
             "category_name": None,
         },
     ),
@@ -261,7 +279,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-09-11",
             "base_amount": "80.00",
             "tax_amount": "16.80",
+            "withholding_amount": "0.00",
             "total_amount": "96.80",
+            "currency": "EUR",
             "category_name": "Office supplies",
         },
     ),
@@ -285,7 +305,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-09-17",
             "base_amount": "1250.00",
             "tax_amount": "262.50",
+            "withholding_amount": "0.00",
             "total_amount": "1512.50",
+            "currency": "EUR",
             "category_name": "Office supplies",
         },
     ),
@@ -308,7 +330,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-10-08",
             "base_amount": "72.73",
             "tax_amount": "7.27",
+            "withholding_amount": "0.00",
             "total_amount": "80.00",
+            "currency": "EUR",
             "category_name": "Travel and meals",
         },
     ),
@@ -330,7 +354,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-10-27",
             "base_amount": "84250.00",
             "tax_amount": "17692.50",
+            "withholding_amount": "0.00",
             "total_amount": "101942.50",
+            "currency": "EUR",
             "category_name": "Marketing",
         },
     ),
@@ -355,7 +381,9 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-10-14",
             "base_amount": "600.00",
             "tax_amount": "126.00",
+            "withholding_amount": "0.00",
             "total_amount": "726.00",
+            "currency": "EUR",
             "category_name": "Professional services",
         },
     ),
@@ -378,9 +406,451 @@ CASES: tuple[EvalCase, ...] = (
             "issue_date": "2026-10-19",
             "base_amount": "250.00",
             "tax_amount": "52.50",
+            "withholding_amount": "0.00",
             "total_amount": "302.50",
+            "currency": "EUR",
             "category_name": "Software and licenses",
         },
+    ),
+    EvalCase(
+        id="es_irpf_withholding_on_fees",
+        description="IRPF withholding is subtracted from the total: it is NOT part of the tax",
+        text=(
+            "Mario Ibáñez Roca - Arquitecto técnico\n"
+            "NIF 45678123K\n"
+            "Factura nº 2026/041\n"
+            "Fecha: 12/06/2026\n"
+            "Cliente: Inmobiliaria Torre Alta S.L.\n"
+            "Honorarios por informe de valoración\n"
+            "Base imponible: 800,00 €\n"
+            "IVA 21%: 168,00 €\n"
+            "Retención IRPF 15%: -120,00 €\n"
+            "TOTAL A PAGAR: 848,00 €"
+        ),
+        expected={
+            "supplier_name": "Mario Ibáñez Roca",
+            "supplier_tax_id": "45678123K",
+            "invoice_number": "2026/041",
+            "issue_date": "2026-06-12",
+            "base_amount": "800.00",
+            "tax_amount": "168.00",
+            "withholding_amount": "120.00",
+            "total_amount": "848.00",
+            "currency": "EUR",
+            "category_name": "Professional services",
+        },
+    ),
+    EvalCase(
+        id="gbp_currency_from_the_symbol",
+        description="The currency is only implied by the pound sign",
+        text=(
+            "Harbour Lane Studios Ltd\n"
+            "Invoice no. HL-3307\n"
+            "Date: 4 September 2026\n"
+            "Brand photography for the new website\n"
+            "Net: £200.00\n"
+            "VAT (20%): £40.00\n"
+            "Amount due: £240.00"
+        ),
+        expected={
+            "supplier_name": "Harbour Lane Studios Ltd",
+            "supplier_tax_id": None,
+            "invoice_number": "HL-3307",
+            "issue_date": "2026-09-04",
+            "base_amount": "200.00",
+            "tax_amount": "40.00",
+            "withholding_amount": "0.00",
+            "total_amount": "240.00",
+            "currency": "GBP",
+            "category_name": "Marketing",
+        },
+    ),
+    EvalCase(
+        id="discount_before_tax_uses_the_net_base",
+        description="The base is the taxable base AFTER the discount, not the gross subtotal",
+        text=(
+            "Papelería Cantábrico S.L.\n"
+            "Factura FC-26-0712 - 03/08/2026\n"
+            "20 cajas de folios A4              500,00\n"
+            "Descuento comercial 10%            -50,00\n"
+            "Base imponible                     450,00\n"
+            "IVA 21%                             94,50\n"
+            "TOTAL                              544,50 €"
+        ),
+        expected={
+            "supplier_name": "Papelería Cantábrico S.L.",
+            "supplier_tax_id": None,
+            "invoice_number": "FC-26-0712",
+            "issue_date": "2026-08-03",
+            "base_amount": "450.00",
+            "tax_amount": "94.50",
+            "withholding_amount": "0.00",
+            "total_amount": "544.50",
+            "currency": "EUR",
+            "category_name": "Office supplies",
+        },
+    ),
+    EvalCase(
+        id="printed_total_one_cent_off",
+        description="The printed total is one cent above base + tax: copy it, do not fix it",
+        text=(
+            "Rótulos y Vinilos Aranda S.L.\n"
+            "Factura R-5521\n"
+            "Fecha: 22/09/2026\n"
+            "Rotulación de local comercial\n"
+            "Base imponible: 100,05 €\n"
+            "IVA 21%: 21,01 €\n"
+            "Total: 121,07 €"
+        ),
+        expected={
+            "supplier_name": "Rótulos y Vinilos Aranda S.L.",
+            "supplier_tax_id": None,
+            "invoice_number": "R-5521",
+            "issue_date": "2026-09-22",
+            "base_amount": "100.05",
+            "tax_amount": "21.01",
+            "withholding_amount": "0.00",
+            "total_amount": "121.07",
+            "currency": "EUR",
+            "category_name": "Marketing",
+        },
+    ),
+    EvalCase(
+        id="refuse_unknown_currency",
+        description="No symbol, code or other hint of the currency: it must not be guessed",
+        text=(
+            "Invoice 8841\n"
+            "From: Northwind Parts\n"
+            "Date: 2026-05-04\n"
+            "Replacement filters x 12\n"
+            "Subtotal 120.00\n"
+            "Tax 10.00\n"
+            "Total 130.00"
+        ),
+        expected=None,
+    ),
+    EvalCase(
+        id="irpf_listed_before_the_vat",
+        description="The withholding line comes BEFORE the VAT line and is only labelled IRPF",
+        text=(
+            "Íñigo Lasa Beltrán - Consultor de calidad\n"
+            "NIF 51234876B\n"
+            "Factura 2026-017\n"
+            "Fecha: 03/07/2026\n"
+            "Cliente: Fabricaciones Ríos S.L.\n"
+            "Consultoría de procesos de calidad (junio)\n"
+            "Base imponible              1.000,00 €\n"
+            "IRPF 15%                     -150,00 €\n"
+            "IVA 21%                       210,00 €\n"
+            "TOTAL FACTURA               1.060,00 €"
+        ),
+        expected={
+            "supplier_name": "Íñigo Lasa Beltrán",
+            "supplier_tax_id": "51234876B",
+            "invoice_number": "2026-017",
+            "issue_date": "2026-07-03",
+            "base_amount": "1000.00",
+            "tax_amount": "210.00",
+            "withholding_amount": "150.00",
+            "total_amount": "1060.00",
+            "currency": "EUR",
+            "category_name": "Professional services",
+        },
+    ),
+    EvalCase(
+        id="irpf_abbreviated_label_and_low_rate",
+        description="Abbreviated 'Ret. IRPF' label with a different rate",
+        text=(
+            "Noelia Vidal Cano\n"
+            "Traductora e intérprete jurada\n"
+            "NIF 70123456F\n"
+            "Fra. nº 2026/009\n"
+            "Fecha: 15/05/2026\n"
+            "Traducción jurada de documentos (EN-ES)\n"
+            "Base: 900,00\n"
+            "IVA 21%: 189,00\n"
+            "Ret. IRPF 7%: -63,00\n"
+            "Total: 1.026,00 EUR"
+        ),
+        expected={
+            "supplier_name": "Noelia Vidal Cano",
+            "supplier_tax_id": "70123456F",
+            "invoice_number": "2026/009",
+            "issue_date": "2026-05-15",
+            "base_amount": "900.00",
+            "tax_amount": "189.00",
+            "withholding_amount": "63.00",
+            "total_amount": "1026.00",
+            "currency": "EUR",
+            "category_name": "Professional services",
+        },
+    ),
+    EvalCase(
+        id="credit_note_reverses_the_withholding",
+        description="Credit note: the withholding is printed positive but must be negative",
+        text=(
+            "Estudio Rey y Salas\n"
+            "Asesores de empresa - NIF 49876123Q\n"
+            "FACTURA RECTIFICATIVA (abono)\n"
+            "Abono nº AB-2026-003\n"
+            "Fecha: 28/09/2026\n"
+            "Cliente: Talleres Mondéjar S.L.\n"
+            "Abono de honorarios de consultoría\n"
+            "Base imponible: -500,00 €\n"
+            "IVA 21%: -105,00 €\n"
+            "Retención IRPF 15%: 75,00 €\n"
+            "Total abono: -530,00 €"
+        ),
+        expected={
+            "supplier_name": "Estudio Rey y Salas",
+            "supplier_tax_id": "49876123Q",
+            "invoice_number": "AB-2026-003",
+            "issue_date": "2026-09-28",
+            "base_amount": "-500.00",
+            "tax_amount": "-105.00",
+            "withholding_amount": "-75.00",
+            "total_amount": "-530.00",
+            "currency": "EUR",
+            "category_name": "Professional services",
+        },
+    ),
+    EvalCase(
+        id="en_withholding_tax_deduction",
+        description="English wording ('Less: withholding tax'), zero tax, a US-style tax id",
+        text=(
+            "Kestrel Legal Advisory LLC\n"
+            "Tax ID 84-1234567\n"
+            "Invoice KLA-2026-088\n"
+            "Date: 10 July 2026\n"
+            "Bill to: Meridian Imports Inc.\n"
+            "Legal advisory services - June\n"
+            "Fees                               400.00\n"
+            "Sales tax (0%)                       0.00\n"
+            "Less: withholding tax (10%)        -40.00\n"
+            "Amount due                         360.00 USD"
+        ),
+        expected={
+            "supplier_name": "Kestrel Legal Advisory LLC",
+            "supplier_tax_id": "841234567",
+            "invoice_number": "KLA-2026-088",
+            "issue_date": "2026-07-10",
+            "base_amount": "400.00",
+            "tax_amount": "0.00",
+            "withholding_amount": "40.00",
+            "total_amount": "360.00",
+            "currency": "USD",
+            "category_name": "Professional services",
+        },
+    ),
+    EvalCase(
+        id="advance_payment_is_not_part_of_the_total",
+        description="An advance is not a withholding: the total is the invoice total",
+        text=(
+            "Estudio Arquitectura Zubiri\n"
+            "Factura A-2026-31\n"
+            "Fecha: 09/09/2026\n"
+            "Honorarios de proyecto de ejecución\n"
+            "Base imponible          1.000,00\n"
+            "IVA 21%                   210,00\n"
+            "TOTAL FACTURA           1.210,00 €\n"
+            "Anticipo recibido        -300,00 €\n"
+            "PENDIENTE DE PAGO         910,00 €"
+        ),
+        expected={
+            "supplier_name": "Estudio Arquitectura Zubiri",
+            "supplier_tax_id": None,
+            "invoice_number": "A-2026-31",
+            "issue_date": "2026-09-09",
+            "base_amount": "1000.00",
+            "tax_amount": "210.00",
+            "withholding_amount": "0.00",
+            "total_amount": "1210.00",
+            "currency": "EUR",
+            "category_name": "Professional services",
+        },
+    ),
+    EvalCase(
+        id="en_discount_on_net_amount",
+        description="English labels: the base is the 'Net amount' after the discount",
+        text=(
+            "Brightline Stationery Ltd\n"
+            "Invoice BS-77120\n"
+            "Date: 21 August 2026\n"
+            "Office chairs x 4        800.00\n"
+            "Discount (10%)           -80.00\n"
+            "Net amount               720.00\n"
+            "VAT 21%                  151.20\n"
+            "Total                    871.20 EUR"
+        ),
+        expected={
+            "supplier_name": "Brightline Stationery Ltd",
+            "supplier_tax_id": None,
+            "invoice_number": "BS-77120",
+            "issue_date": "2026-08-21",
+            "base_amount": "720.00",
+            "tax_amount": "151.20",
+            "withholding_amount": "0.00",
+            "total_amount": "871.20",
+            "currency": "EUR",
+            "category_name": "Office supplies",
+        },
+    ),
+    EvalCase(
+        id="mxn_dollar_sign_with_mexican_context",
+        description="A bare $ is not always USD: the Mexican context points to pesos",
+        text=(
+            "Papelera del Valle S.A. de C.V.\n"
+            "Ciudad de México\n"
+            "Factura F-4410\n"
+            "Fecha: 12/08/2026\n"
+            "Papel bond y tinta para oficina\n"
+            "Subtotal: $1,000.00\n"
+            "IVA 16%: $160.00\n"
+            "Total: $1,160.00"
+        ),
+        expected={
+            "supplier_name": "Papelera del Valle S.A. de C.V.",
+            "supplier_tax_id": None,
+            "invoice_number": "F-4410",
+            "issue_date": "2026-08-12",
+            "base_amount": "1000.00",
+            "tax_amount": "160.00",
+            "withholding_amount": "0.00",
+            "total_amount": "1160.00",
+            "currency": "MXN",
+            "category_name": "Office supplies",
+        },
+    ),
+    EvalCase(
+        id="currency_written_as_a_word",
+        description="No symbol or code: the currency is the word 'euros'",
+        text=(
+            "Catering Sabor Mediterráneo S.L.\n"
+            "Factura CSM-2026-212\n"
+            "Fecha: 17/06/2026\n"
+            "Servicio de catering para reunión de equipo\n"
+            "Base imponible: 289,26 euros\n"
+            "IVA 21%: 60,74 euros\n"
+            "Importe total: 350,00 euros"
+        ),
+        expected={
+            "supplier_name": "Catering Sabor Mediterráneo S.L.",
+            "supplier_tax_id": None,
+            "invoice_number": "CSM-2026-212",
+            "issue_date": "2026-06-17",
+            "base_amount": "289.26",
+            "tax_amount": "60.74",
+            "withholding_amount": "0.00",
+            "total_amount": "350.00",
+            "currency": "EUR",
+            "category_name": "Travel and meals",
+        },
+    ),
+    EvalCase(
+        id="exchange_rate_note_does_not_change_the_currency",
+        description="An informative conversion into USD must not replace the invoice currency",
+        text=(
+            "Hotel Alameda Plaza\n"
+            "Invoice 2026-6631\n"
+            "Date: 2026-09-30\n"
+            "Stay of 3 nights - Room 412\n"
+            "Net: 450.00 EUR\n"
+            "VAT 10%: 45.00 EUR\n"
+            "Total: 495.00 EUR\n"
+            "For reference only: approx. 537.57 USD at 1.0860"
+        ),
+        expected={
+            "supplier_name": "Hotel Alameda Plaza",
+            "supplier_tax_id": None,
+            "invoice_number": "2026-6631",
+            "issue_date": "2026-09-30",
+            "base_amount": "450.00",
+            "tax_amount": "45.00",
+            "withholding_amount": "0.00",
+            "total_amount": "495.00",
+            "currency": "EUR",
+            "category_name": "Travel and meals",
+        },
+    ),
+    EvalCase(
+        id="de_vat_number_is_kept",
+        description="German invoice: a foreign VAT number keeps its country prefix",
+        text=(
+            "Lichtwerk Software GmbH\n"
+            "USt-IdNr.: DE298765431\n"
+            "Rechnung Nr. LW-2026-5509\n"
+            "Datum: 11.08.2026\n"
+            "Jahreslizenz Projektverwaltung (5 Nutzer)\n"
+            "Nettobetrag: 600,00 EUR\n"
+            "MwSt 19%: 114,00 EUR\n"
+            "Gesamtbetrag: 714,00 EUR"
+        ),
+        expected={
+            "supplier_name": "Lichtwerk Software GmbH",
+            "supplier_tax_id": "DE298765431",
+            "invoice_number": "LW-2026-5509",
+            "issue_date": "2026-08-11",
+            "base_amount": "600.00",
+            "tax_amount": "114.00",
+            "withholding_amount": "0.00",
+            "total_amount": "714.00",
+            "currency": "EUR",
+            "category_name": "Software and licenses",
+        },
+    ),
+    EvalCase(
+        id="only_the_customers_tax_id_is_printed",
+        description="The only tax id printed is the CUSTOMER's: the supplier's must be null",
+        text=(
+            "Suministros Bahía Azul\n"
+            "Factura BA-2026-0391\n"
+            "Fecha: 06/10/2026\n"
+            "Cliente: Hostelería Ventura S.L. (CIF B77889900)\n"
+            "Material de oficina y consumibles\n"
+            "Base imponible: 70,00 €\n"
+            "IVA 21%: 14,70 €\n"
+            "Total: 84,70 €"
+        ),
+        expected={
+            "supplier_name": "Suministros Bahía Azul",
+            "supplier_tax_id": None,
+            "invoice_number": "BA-2026-0391",
+            "issue_date": "2026-10-06",
+            "base_amount": "70.00",
+            "tax_amount": "14.70",
+            "withholding_amount": "0.00",
+            "total_amount": "84.70",
+            "currency": "EUR",
+            "category_name": "Office supplies",
+        },
+    ),
+    EvalCase(
+        id="refuse_invoice_with_non_taxable_expenses",
+        description="Non-taxable expenses are not modelled: refuse, do not bend figures",
+        text=(
+            "Gestoría Pérez Navarro S.L.\n"
+            "Factura 2026-0455 - 14/08/2026\n"
+            "Tramitación de escritura\n"
+            "Base imponible: 600,00 €\n"
+            "IVA 21%: 126,00 €\n"
+            "Suplidos (tasas del registro, sin IVA): 45,00 €\n"
+            "TOTAL: 771,00 €"
+        ),
+        expected=None,
+    ),
+    EvalCase(
+        id="refuse_printed_total_two_cents_off",
+        description="Printed total is two cents off (beyond tolerance): refuse, do not fix it",
+        text=(
+            "Ferretería Industrial Vallés S.L.\n"
+            "Factura FV-2026-1180\n"
+            "Fecha: 02/10/2026\n"
+            "Material de ferretería\n"
+            "Base imponible: 250,00 €\n"
+            "IVA 21%: 52,50 €\n"
+            "Total: 302,52 €"
+        ),
+        expected=None,
     ),
     EvalCase(
         id="refuse_not_an_invoice",

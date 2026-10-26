@@ -8,7 +8,11 @@ import pytest
 
 from evals.cases import CASES, CATEGORIES
 from invoice_api.schemas.extraction import ExtractedInvoice
+from invoice_api.schemas.invoice import check_amounts
 from invoice_api.services.extraction import FEW_SHOT_EXAMPLES, SYSTEM_PROMPT
+
+# Lines that name the customer: a tax id printed there is NOT the supplier's.
+CUSTOMER_LINE = re.compile(r"^.*\b(?:Cliente|Customer|Bill to)\b.*$", re.M | re.I)
 
 NIF_SHAPED = re.compile(r"\b[A-Z]\d{8}\b|\b\d{8}[A-Z]\b")
 
@@ -17,7 +21,7 @@ REFUSAL_CASES = [c for c in CASES if c.expected is None]
 
 
 def test_dataset_has_enough_cases():
-    assert 10 <= len(CASES) <= 20
+    assert 10 <= len(CASES) <= 50
     assert len(EXTRACTION_CASES) >= 10
     assert len(REFUSAL_CASES) >= 1
 
@@ -27,13 +31,23 @@ def test_case_ids_are_unique():
     assert duplicates == []
 
 
+def _gap(invoice: ExtractedInvoice) -> Decimal:
+    """How far the total is from base + tax - withholding."""
+    return (
+        invoice.base_amount
+        + invoice.tax_amount
+        - invoice.withholding_amount
+        - invoice.total_amount
+    )
+
+
 @pytest.mark.parametrize("case", EXTRACTION_CASES, ids=lambda c: c.id)
 def test_expected_values_are_a_valid_extraction(case):
     assert case.expected is not None
 
     invoice = ExtractedInvoice.model_validate(case.expected)  # also checks the totals
 
-    assert invoice.base_amount + invoice.tax_amount == invoice.total_amount
+    assert abs(_gap(invoice)) <= Decimal("0.01")
     assert Decimal(case.expected["total_amount"]) == invoice.total_amount
 
 
@@ -68,7 +82,8 @@ def test_an_expected_tax_id_is_printed_in_the_text_and_none_is_expected_otherwis
         tax_id = case.expected["supplier_tax_id"]
         if tax_id is None:
             # A case that expects no tax id must not print anything shaped like one.
-            assert not NIF_SHAPED.search(case.text), case.id
+            supplier_side = CUSTOMER_LINE.sub("", case.text)
+            assert not NIF_SHAPED.search(supplier_side), case.id
         else:
             assert tax_id in _without_separators(case.text), case.id
 
@@ -87,6 +102,66 @@ def test_a_case_tests_that_the_customers_tax_id_is_not_taken():
     printed = set(NIF_SHAPED.findall(case.text))
     # The text really contains another tax id to be confused with.
     assert printed - {case.expected["supplier_tax_id"]}
+
+
+def _expected_invoices() -> list[ExtractedInvoice]:
+    return [
+        ExtractedInvoice.model_validate(c.expected) for c in EXTRACTION_CASES if c.expected
+    ]
+
+
+def test_the_dataset_covers_withholdings_other_currencies_and_rounding_gaps():
+    invoices = _expected_invoices()
+
+    assert any(i.withholding_amount != 0 for i in invoices)
+    assert any(i.currency != "EUR" for i in invoices)
+    assert {"EUR", "USD", "GBP"} <= {i.currency for i in invoices}
+    assert any(abs(_gap(i)) == Decimal("0.01") for i in invoices)  # printed as is
+
+
+def test_a_withholding_case_keeps_the_withholding_out_of_the_tax():
+    """If the tax absorbed the withholding, the totals would still add up."""
+    case = next(c for c in EXTRACTION_CASES if c.id == "es_irpf_withholding_on_fees")
+    invoice = ExtractedInvoice.model_validate(case.expected)
+
+    assert invoice.tax_amount == invoice.base_amount * Decimal("0.21")
+    assert invoice.withholding_amount > 0
+
+
+@pytest.mark.parametrize(
+    ("case_id", "base", "tax", "total"),
+    [
+        ("refuse_printed_total_two_cents_off", "250,00", "52,50", "302,52"),
+        ("refuse_invoice_with_non_taxable_expenses", "600,00", "126,00", "771,00"),
+    ],
+)
+def test_a_refusal_case_about_bent_figures_really_does_not_add_up(case_id, base, tax, total):
+    """If the printed figures became acceptable (e.g. a wider tolerance), the case
+    would no longer measure whether the model bends numbers to fit."""
+    case = next(c for c in CASES if c.id == case_id)
+    assert case.expected is None
+    for figure in (base, tax, total):
+        assert figure in case.text
+
+    def amount(printed: str) -> Decimal:
+        return Decimal(printed.replace(",", "."))
+
+    with pytest.raises(ValueError):
+        check_amounts(amount(base), amount(tax), Decimal(0), amount(total))
+
+
+def test_the_credit_note_case_prints_the_withholding_with_the_opposite_sign():
+    case = next(c for c in EXTRACTION_CASES if c.id == "credit_note_reverses_the_withholding")
+
+    assert case.expected is not None
+    assert "Retención IRPF 15%: 75,00" in case.text  # printed positive
+    assert Decimal(case.expected["withholding_amount"]) == Decimal("-75.00")
+
+
+def test_the_unknown_currency_case_is_a_refusal():
+    case = next(c for c in CASES if c.id == "refuse_unknown_currency")
+
+    assert case.expected is None
 
 
 def test_some_cases_expect_no_category_and_some_expect_negative_amounts():

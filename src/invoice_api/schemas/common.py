@@ -1,10 +1,14 @@
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import AfterValidator, Field, StringConstraints
+from pydantic import AfterValidator, BeforeValidator, Field, StringConstraints
 
 from invoice_api.constants import POSTGRES_INT_MAX
-from invoice_api.models.invoice import INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE
+from invoice_api.models.invoice import (
+    INVOICE_AMOUNT_PRECISION,
+    INVOICE_AMOUNT_SCALE,
+    INVOICE_CURRENCY_LENGTH,
+)
 from invoice_api.normalization import normalize_tax_id
 
 
@@ -48,7 +52,31 @@ TaxId = Annotated[
     AfterValidator(_valid_tax_id),
 ]
 
+
+def _upper_case(value: object) -> object:
+    # Before the pattern check, so "eur" and " EUR " are accepted as EUR.
+    return value.strip().upper() if isinstance(value, str) else value
+
+
+# ISO 4217 code ("EUR", "USD"): letters only, upper-cased. It checks the shape,
+# not that the code exists.
+Currency = Annotated[
+    str,
+    BeforeValidator(_upper_case),
+    StringConstraints(pattern=rf"^[A-Z]{{{INVOICE_CURRENCY_LENGTH}}}$"),
+]
+
 DbId = Annotated[int, Field(ge=1, le=POSTGRES_INT_MAX)]
+
+_AMOUNT_STEP = Decimal(1).scaleb(-INVOICE_AMOUNT_SCALE)
+
+
+def _to_amount_scale(value: Decimal) -> Decimal:
+    # Always show the decimals the column stores ("84.3" -> "84.30", 0 -> "0.00"),
+    # so what a POST returns is exactly what the next GET returns. Lossless: the
+    # Field below already rejects more decimals than this.
+    return value.quantize(_AMOUNT_STEP)
+
 
 # Same precision as the invoice columns. Negatives are allowed (credit notes)
 Money = Annotated[
@@ -58,4 +86,5 @@ Money = Annotated[
         decimal_places=INVOICE_AMOUNT_SCALE,
         allow_inf_nan=False,
     ),
+    AfterValidator(_to_amount_scale),
 ]
