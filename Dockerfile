@@ -32,6 +32,7 @@ WORKDIR /app
 COPY --from=build /app/.venv ./.venv
 COPY alembic.ini ./
 COPY migrations ./migrations
+COPY --chmod=755 docker/entrypoint.sh /entrypoint.sh
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
@@ -43,6 +44,9 @@ EXPOSE 8000
 # python:slim has no curl. A 503 (database down) makes urlopen raise, so it fails too.
 HEALTHCHECK --interval=15s --timeout=4s --start-period=20s --retries=3 \
     CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)"]
+
+# The entrypoint applies the migrations (RUN_MIGRATIONS=false skips them), then runs CMD.
+ENTRYPOINT ["/entrypoint.sh"]
 
 # --proxy-headers only trusts forwarded headers from FORWARDED_ALLOW_IPS (127.0.0.1 by
 # default): set it to the reverse proxy's address, or every client shares one IP limit.
