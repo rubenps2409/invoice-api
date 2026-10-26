@@ -1,0 +1,29 @@
+# Secrets and local state never enter the build context
+.env
+.env.*
+!.env.example
+
+# Version control and editors
+.git
+.gitattributes
+.gitignore
+.vscode
+.claude
+
+# Python caches and environments
+.venv
+__pycache__
+*.py[oc]
+.pytest_cache
+.ruff_cache
+.coverage
+
+# Not needed to run the API
+tests
+evals
+scripts
+docs
+CLAUDE.md
+Dockerfile
+docker-compose.y*ml
+.dockerignore
