@@ -1,11 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, func
+from sqlalchemy import DateTime, ForeignKey, Index, Numeric, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from invoice_api.models.base import Base
 
+LLM_CALL_USER_CREATED_INDEX = "ix_llm_calls_user_id_created_at"
+LLM_CALL_CREATED_INDEX = "ix_llm_calls_created_at"
 LLM_CALL_PURPOSE_MAX_LENGTH = 50
 LLM_CALL_MODEL_MAX_LENGTH = 100
 LLM_CALL_OUTCOME_MAX_LENGTH = 20
@@ -22,7 +24,7 @@ class LlmCall(Base):
     __tablename__ = "llm_calls"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -39,3 +41,9 @@ class LlmCall(Base):
     )
     latency_ms: Mapped[int]
     detail: Mapped[str | None] = mapped_column(String(LLM_CALL_DETAIL_MAX_LENGTH))
+
+    __table_args__ = (
+        # The daily budget sums the cost of a user (and of everybody) since midnight.
+        Index(LLM_CALL_USER_CREATED_INDEX, "user_id", "created_at"),
+        Index(LLM_CALL_CREATED_INDEX, "created_at"),
+    )
