@@ -205,6 +205,12 @@ run.
     proxy's IP, so every user would share one limit: run uvicorn with
     `--proxy-headers` and `--forwarded-allow-ips` set to the proxy. Never
     read `X-Forwarded-For` in the code; any client can forge it.
+-   Tested on the live Render demo (2026-10-26): `FORWARDED_ALLOW_IPS=*` is
+    forgeable there, because the platform appends the real IP to the header the
+    client sent and uvicorn takes the leftmost value. It stays unset; the demo's
+    visitors share the limits of a few proxy addresses, and `render.yaml` raises
+    `REGISTER_MAX_PER_IP` to compensate. Trusting only the platform's proxy ranges
+    would work, but they are undocumented.
 
 ## 6. LLM extraction behavior
 
@@ -301,20 +307,14 @@ against official sources before implementing them.
 
 ## 9. Current project status and planned scope
 
-The original roadmap places the project at the end of week 3, focused on
-LLM integration, with important issues still to be corrected. The
-archive shows that the repository already includes CRUD/authentication
-code, SQLAlchemy models, Alembic migrations, an extraction service and
-endpoint, usage/cost recording, tests, and a synthetic evaluation
-framework.
-
-The next planned milestone is to stabilize the existing implementation,
-then finish a reproducible and presentable first release. The roadmap
-includes Docker for the API and database, CI, deployment and a useful
-README, but these are goals---not claims that they are already complete.
-Inspect the current repository before planning or implementing them. At
-the time of review, `README.md` in the supplied archive was empty and
-`docker-compose.yaml` defined only PostgreSQL.
+The first release is done and deployed: CRUD and authentication, an async
+extraction service and endpoint with usage/cost recording, daily budgets and
+rate limits, a 35-case synthetic eval, a multi-stage Dockerfile, a Compose file
+with the API and PostgreSQL, CI on GitHub Actions, a README with screenshots and
+known limitations, and a public demo on Render (free web service, Neon database)
+described by `render.yaml` and deployed only after the CI passes. The
+interview-style decision notes are not written yet. Inspect the repository
+before claiming anything else is finished.
 
 Later roadmap ideas, not assumed to be implemented requirements: -
 Asynchronous processing with a worker, idempotency and bounded

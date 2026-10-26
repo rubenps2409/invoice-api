@@ -136,8 +136,12 @@ $0.14. The reports hold case ids, scores, tokens and cost, never invoice text.
   waits for the model.
 - Registration is open. The budgets limit the damage, but enough accounts can use up the daily
   cap and pause extraction for everybody until 00:00 UTC.
-- The demo's limits count every visitor as one client, because the deployment does not yet
-  trust any proxy to tell it the real IP.
+- Behind Render's proxy the app sees the proxy's address, not the visitor's, so the login and
+  registration limits are shared by all visitors (in the demo, by two or three proxy
+  addresses, measured). Trusting `X-Forwarded-For` was tested on the live demo and can be
+  forged there, because the platform appends the real IP to whatever the client sends, so it
+  stays off. One consequence: a few wrong passwords from anyone can lock a given email out of
+  login for 15 minutes. The daily budgets still bound the spending.
 - The free plan sleeps when idle, and free tiers can change.
 
 ## Layout
