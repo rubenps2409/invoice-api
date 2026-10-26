@@ -169,6 +169,14 @@ run.
     object level. A user must not read, update or delete another user's
     invoices, suppliers or categories by changing an ID.
 -   Do not log full invoice text or unnecessary personal/financial data.
+    The request log (`middleware.py`) records only method, path, status and
+    duration: never query strings, headers, bodies or client IPs. Logging is set
+    up in `logging_config.py` (JSON in production); uvicorn's own access log is
+    silenced in favour of it.
+-   `ENVIRONMENT` (`development` by default, `production` in a deployment) hides
+    `/docs`, `/redoc` and `/openapi.json`, switches the logs to JSON and makes
+    `scripts/seed.py` refuse to run (it creates a known account with a known
+    password). `main.create_app(environment)` builds the app so tests can try both.
 -   Use synthetic invoice data in tests, evals, examples and public
     repositories. Never commit real invoices or customer data.
 -   Do not weaken password hashing, token validation, ownership filters
