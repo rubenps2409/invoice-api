@@ -9,6 +9,7 @@ run is an anecdote, several runs are a measurement.
 """
 
 import argparse
+import asyncio
 import json
 from collections import Counter
 from dataclasses import asdict, dataclass
@@ -30,7 +31,7 @@ class Extractor(Protocol):
     @property
     def model(self) -> str: ...
 
-    def extract(self, text: str, categories: tuple[str, ...]) -> ExtractionResult: ...
+    async def extract(self, text: str, categories: tuple[str, ...]) -> ExtractionResult: ...
 
 
 @dataclass(frozen=True)
@@ -50,12 +51,12 @@ class EvalReport:
         return data
 
 
-def run_eval(extractor: Extractor, cases: tuple[EvalCase, ...] = CASES) -> EvalReport:
+async def run_eval(extractor: Extractor, cases: tuple[EvalCase, ...] = CASES) -> EvalReport:
     scores: list[CaseScore] = []
     for case in cases:
         attempts: list[Attempt]
         try:
-            result = extractor.extract(case.text, case.categories)
+            result = await extractor.extract(case.text, case.categories)
             outcome, attempts = result.invoice, result.attempts
         except ExtractionError as exc:
             outcome, attempts = exc, exc.attempts
@@ -205,12 +206,13 @@ def mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
-def run_eval_repeated(
+async def run_eval_repeated(
     extractor: Extractor, runs: int, cases: tuple[EvalCase, ...] = CASES
 ) -> RepeatedReport:
     if runs < 1:
         raise ValueError("runs must be at least 1")
-    return RepeatedReport([run_eval(extractor, cases) for _ in range(runs)])
+    # One run after the other: the eval measures the model, not its rate limits.
+    return RepeatedReport([await run_eval(extractor, cases) for _ in range(runs)])
 
 
 def _range(values: list[float]) -> str:
@@ -254,8 +256,6 @@ def save_report(report: EvalReport | RepeatedReport, path: Path = RESULTS_FILE) 
 
 
 def main(argv: list[str] | None = None) -> None:
-    from invoice_api.services.extraction import ExtractionNotConfigured, get_extractor
-
     parser = argparse.ArgumentParser(description="Evaluate invoice extraction.")
     parser.add_argument(
         "--runs", type=int, default=1, help="repeat the eval to measure consistency"
@@ -263,20 +263,32 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     if args.runs < 1:
         parser.error("--runs must be at least 1")
+    asyncio.run(_run(args.runs))
+
+
+async def _run(runs: int) -> None:
+    from invoice_api.services.extraction import (
+        ExtractionNotConfigured,
+        close_client,
+        get_extractor,
+    )
 
     try:
-        extractor = get_extractor()
+        extractor = await get_extractor()
     except ExtractionNotConfigured:
         raise SystemExit("Set ANTHROPIC_API_KEY in .env to run the eval.") from None
 
-    if args.runs == 1:
-        report = run_eval(extractor)
-        print(format_report(report))
-        print(f"\nSaved to {save_report(report)}")
-    else:
-        repeated = run_eval_repeated(extractor, args.runs)
-        print(format_repeated(repeated))
-        print(f"\nSaved to {save_report(repeated)}")
+    try:
+        if runs == 1:
+            report = await run_eval(extractor)
+            print(format_report(report))
+            print(f"\nSaved to {save_report(report)}")
+        else:
+            repeated = await run_eval_repeated(extractor, runs)
+            print(format_repeated(repeated))
+            print(f"\nSaved to {save_report(repeated)}")
+    finally:
+        await close_client()
 
 
 if __name__ == "__main__":

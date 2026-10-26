@@ -15,8 +15,10 @@ EMAIL = "ana@example.com"
 # --- register ---------------------------------------------------------------
 
 
-def test_register_returns_user_without_password(client):
-    response = client.post("/api/auth/register", json={"email": EMAIL, "password": PASSWORD})
+async def test_register_returns_user_without_password(client):
+    response = await client.post(
+        "/api/auth/register", json={"email": EMAIL, "password": PASSWORD}
+    )
 
     assert response.status_code == 201
     body = response.json()
@@ -26,33 +28,35 @@ def test_register_returns_user_without_password(client):
     assert "hashed_password" not in body
 
 
-def test_register_stores_a_hash_not_the_password(client, db):
-    create_user(client, EMAIL)
+async def test_register_stores_a_hash_not_the_password(client, db):
+    await create_user(client, EMAIL)
 
-    user = db.scalar(select(User).where(User.email == EMAIL))
+    user = await db.scalar(select(User).where(User.email == EMAIL))
 
     assert user.hashed_password != PASSWORD
     assert user.hashed_password.startswith("$argon2")
 
 
-def test_register_lowercases_email(client):
-    user = create_user(client, "Ana@Example.COM")
+async def test_register_lowercases_email(client):
+    user = await create_user(client, "Ana@Example.COM")
 
     assert user["email"] == EMAIL
 
 
-def test_register_duplicate_email_returns_409(client):
-    create_user(client, EMAIL)
+async def test_register_duplicate_email_returns_409(client):
+    await create_user(client, EMAIL)
 
-    response = client.post("/api/auth/register", json={"email": EMAIL, "password": PASSWORD})
+    response = await client.post(
+        "/api/auth/register", json={"email": EMAIL, "password": PASSWORD}
+    )
 
     assert response.status_code == 409
 
 
-def test_register_duplicate_email_ignores_case(client):
-    create_user(client, EMAIL)
+async def test_register_duplicate_email_ignores_case(client):
+    await create_user(client, EMAIL)
 
-    response = client.post(
+    response = await client.post(
         "/api/auth/register", json={"email": EMAIL.upper(), "password": PASSWORD}
     )
 
@@ -78,8 +82,8 @@ def test_register_duplicate_email_ignores_case(client):
         "extra-field",
     ],
 )
-def test_register_rejects_invalid_payload(client, payload):
-    response = client.post("/api/auth/register", json=payload)
+async def test_register_rejects_invalid_payload(client, payload):
+    response = await client.post("/api/auth/register", json=payload)
 
     assert response.status_code == 422
 
@@ -87,10 +91,12 @@ def test_register_rejects_invalid_payload(client, payload):
 # --- login ------------------------------------------------------------------
 
 
-def test_login_returns_bearer_token(client):
-    create_user(client, EMAIL)
+async def test_login_returns_bearer_token(client):
+    await create_user(client, EMAIL)
 
-    response = client.post("/api/auth/login", data={"username": EMAIL, "password": PASSWORD})
+    response = await client.post(
+        "/api/auth/login", data={"username": EMAIL, "password": PASSWORD}
+    )
 
     assert response.status_code == 200
     body = response.json()
@@ -98,23 +104,23 @@ def test_login_returns_bearer_token(client):
     assert body["access_token"]
 
 
-def test_login_ignores_email_case_and_surrounding_spaces(client):
-    create_user(client, EMAIL)
+async def test_login_ignores_email_case_and_surrounding_spaces(client):
+    await create_user(client, EMAIL)
 
-    response = client.post(
+    response = await client.post(
         "/api/auth/login", data={"username": "  ANA@example.com ", "password": PASSWORD}
     )
 
     assert response.status_code == 200
 
 
-def test_login_failures_are_indistinguishable(client):
-    create_user(client, EMAIL)
+async def test_login_failures_are_indistinguishable(client):
+    await create_user(client, EMAIL)
 
-    wrong_password = client.post(
+    wrong_password = await client.post(
         "/api/auth/login", data={"username": EMAIL, "password": "wrong-password"}
     )
-    unknown_email = client.post(
+    unknown_email = await client.post(
         "/api/auth/login", data={"username": "nobody@example.com", "password": PASSWORD}
     )
 
@@ -127,18 +133,18 @@ def test_login_failures_are_indistinguishable(client):
 # --- /users/me --------------------------------------------------------------
 
 
-def test_me_returns_current_user(client):
-    created = create_user(client, EMAIL)
-    headers = login_headers(client, EMAIL)
+async def test_me_returns_current_user(client):
+    created = await create_user(client, EMAIL)
+    headers = await login_headers(client, EMAIL)
 
-    response = client.get("/api/users/me", headers=headers)
+    response = await client.get("/api/users/me", headers=headers)
 
     assert response.status_code == 200
     assert response.json() == created
 
 
-def test_me_without_token_returns_401(client):
-    response = client.get("/api/users/me")
+async def test_me_without_token_returns_401(client):
+    response = await client.get("/api/users/me")
 
     assert response.status_code == 401
 
@@ -148,45 +154,47 @@ def test_me_without_token_returns_401(client):
     ["garbage", "a.b.c"],
     ids=["not-a-jwt", "malformed-jwt"],
 )
-def test_me_with_invalid_token_returns_401(client, token):
-    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+async def test_me_with_invalid_token_returns_401(client, token):
+    response = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 401
 
 
-def test_me_with_token_signed_with_other_key_returns_401(client):
-    user = create_user(client, EMAIL)
+async def test_me_with_token_signed_with_other_key_returns_401(client):
+    user = await create_user(client, EMAIL)
     forged = jwt.encode(
         {"sub": str(user["id"]), "exp": datetime.now(UTC) + timedelta(minutes=5)},
         "some-other-secret-key-that-is-long-enough",
         algorithm=settings.ALGORITHM,
     )
 
-    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {forged}"})
+    response = await client.get("/api/users/me", headers={"Authorization": f"Bearer {forged}"})
 
     assert response.status_code == 401
 
 
-def test_me_with_expired_token_returns_401(client):
-    user = create_user(client, EMAIL)
+async def test_me_with_expired_token_returns_401(client):
+    user = await create_user(client, EMAIL)
     expired = jwt.encode(
         {"sub": str(user["id"]), "exp": datetime.now(UTC) - timedelta(minutes=1)},
         settings.SECRET_KEY,
         algorithm=settings.ALGORITHM,
     )
 
-    response = client.get("/api/users/me", headers={"Authorization": f"Bearer {expired}"})
+    response = await client.get(
+        "/api/users/me", headers={"Authorization": f"Bearer {expired}"}
+    )
 
     assert response.status_code == 401
 
 
-def test_me_with_token_of_deleted_user_returns_401(client, db):
-    create_user(client, EMAIL)
-    headers = login_headers(client, EMAIL)
-    db.delete(db.scalar(select(User).where(User.email == EMAIL)))
-    db.commit()
+async def test_me_with_token_of_deleted_user_returns_401(client, db):
+    await create_user(client, EMAIL)
+    headers = await login_headers(client, EMAIL)
+    await db.delete(await db.scalar(select(User).where(User.email == EMAIL)))
+    await db.commit()
 
-    response = client.get("/api/users/me", headers=headers)
+    response = await client.get("/api/users/me", headers=headers)
 
     assert response.status_code == 401
 
@@ -209,46 +217,46 @@ def _bearer(token):
     ["abc", "0", "-1", "2147483648", "99999999999999999999"],
     ids=["not-a-number", "zero", "negative", "above-int-max", "huge"],
 )
-def test_me_with_unusable_subject_returns_401(client, subject):
+async def test_me_with_unusable_subject_returns_401(client, subject):
     exp = datetime.now(UTC) + timedelta(minutes=5)
     token = _signed({"sub": subject, "exp": exp})
 
-    response = client.get("/api/users/me", headers=_bearer(token))
+    response = await client.get("/api/users/me", headers=_bearer(token))
 
     assert response.status_code == 401
 
 
-def test_me_with_token_missing_exp_returns_401(client):
-    user = create_user(client, EMAIL)
+async def test_me_with_token_missing_exp_returns_401(client):
+    user = await create_user(client, EMAIL)
     token = _signed({"sub": str(user["id"])})
 
-    response = client.get("/api/users/me", headers=_bearer(token))
+    response = await client.get("/api/users/me", headers=_bearer(token))
 
     assert response.status_code == 401
 
 
-def test_me_with_token_missing_sub_returns_401(client):
+async def test_me_with_token_missing_sub_returns_401(client):
     token = _signed({"exp": datetime.now(UTC) + timedelta(minutes=5)})
 
-    response = client.get("/api/users/me", headers=_bearer(token))
+    response = await client.get("/api/users/me", headers=_bearer(token))
 
     assert response.status_code == 401
 
 
-def test_me_rejects_token_using_another_algorithm(client):
-    user = create_user(client, EMAIL)
+async def test_me_rejects_token_using_another_algorithm(client):
+    user = await create_user(client, EMAIL)
     exp = datetime.now(UTC) + timedelta(minutes=5)
     claims = {"sub": str(user["id"]), "exp": exp}
 
     hs512 = _signed(claims, algorithm="HS512")
     unsigned = jwt.encode(claims, None, algorithm="none")
 
-    assert client.get("/api/users/me", headers=_bearer(hs512)).status_code == 401
-    assert client.get("/api/users/me", headers=_bearer(unsigned)).status_code == 401
+    assert (await client.get("/api/users/me", headers=_bearer(hs512))).status_code == 401
+    assert (await client.get("/api/users/me", headers=_bearer(unsigned))).status_code == 401
 
 
-def test_me_with_non_bearer_scheme_returns_401(client):
-    response = client.get("/api/users/me", headers={"Authorization": "Basic abc"})
+async def test_me_with_non_bearer_scheme_returns_401(client):
+    response = await client.get("/api/users/me", headers={"Authorization": "Basic abc"})
 
     assert response.status_code == 401
 
@@ -257,8 +265,8 @@ def test_me_with_non_bearer_scheme_returns_401(client):
 
 
 @pytest.mark.parametrize("length", [8, 128])
-def test_register_accepts_password_length_boundaries(client, length):
-    response = client.post(
+async def test_register_accepts_password_length_boundaries(client, length):
+    response = await client.post(
         "/api/auth/register",
         json={"email": EMAIL, "password": "x" * length},
     )
@@ -266,26 +274,28 @@ def test_register_accepts_password_length_boundaries(client, length):
     assert response.status_code == 201
 
 
-def test_register_accepts_unicode_password_and_login_works(client):
+async def test_register_accepts_unicode_password_and_login_works(client):
     password = "contraseña🙂123"
-    create_user(client, EMAIL, password)
+    await create_user(client, EMAIL, password)
 
-    response = client.post("/api/auth/login", data={"username": EMAIL, "password": password})
+    response = await client.post(
+        "/api/auth/login", data={"username": EMAIL, "password": password}
+    )
 
     assert response.status_code == 200
 
 
-def test_login_with_very_long_password_returns_401(client):
-    create_user(client, EMAIL)
+async def test_login_with_very_long_password_returns_401(client):
+    await create_user(client, EMAIL)
 
-    response = client.post(
+    response = await client.post(
         "/api/auth/login", data={"username": EMAIL, "password": "x" * 10_000}
     )
 
     assert response.status_code == 401
 
 
-def test_the_documented_token_url_is_the_real_login_route(client):
+async def test_the_documented_token_url_is_the_real_login_route(client):
     """The token URL is written separately from the router prefixes; if they
     drift apart, the "Authorize" button of the API docs stops working."""
     schemes = app.openapi()["components"]["securitySchemes"]
@@ -296,9 +306,11 @@ def test_the_documented_token_url_is_the_real_login_route(client):
     )
 
 
-def test_login_requires_form_data_not_json(client):
-    create_user(client, EMAIL)
+async def test_login_requires_form_data_not_json(client):
+    await create_user(client, EMAIL)
 
-    response = client.post("/api/auth/login", json={"username": EMAIL, "password": PASSWORD})
+    response = await client.post(
+        "/api/auth/login", json={"username": EMAIL, "password": PASSWORD}
+    )
 
     assert response.status_code == 422

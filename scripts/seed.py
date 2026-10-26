@@ -1,15 +1,16 @@
 import argparse
+import asyncio
 import random
 from dataclasses import dataclass
 from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from invoice_api.database import SessionLocal
+from invoice_api.database import SessionLocal, engine
 from invoice_api.models import Category, Invoice, InvoiceStatus, Supplier, User
-from invoice_api.security import hash_password, verify_password
+from invoice_api.security import hash_password_async, verify_password_async
 
 DEMO_EMAIL = "demo@example.com"
 DEMO_PASSWORD = "demo-password"
@@ -148,39 +149,37 @@ def money(value: Decimal) -> Decimal:
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
-def ensure_demo_user(db: Session) -> User:
-    user = db.scalar(select(User).where(User.email == DEMO_EMAIL))
+async def ensure_demo_user(db: AsyncSession) -> User:
+    user = await db.scalar(select(User).where(User.email == DEMO_EMAIL))
     if user is None:
-        user = User(email=DEMO_EMAIL, hashed_password=hash_password(DEMO_PASSWORD))
+        user = User(email=DEMO_EMAIL, hashed_password=await hash_password_async(DEMO_PASSWORD))
         db.add(user)
-    elif not verify_password(DEMO_PASSWORD, user.hashed_password):
-        user.hashed_password = hash_password(DEMO_PASSWORD)
-    db.flush()
+    elif not await verify_password_async(DEMO_PASSWORD, user.hashed_password):
+        user.hashed_password = await hash_password_async(DEMO_PASSWORD)
+    await db.flush()
     return user
 
 
-def reset_demo_data(db: Session, user_id: int) -> None:
+async def reset_demo_data(db: AsyncSession, user_id: int) -> None:
     for model in (Invoice, Supplier, Category):
-        db.execute(delete(model).where(model.user_id == user_id))
-    db.flush()
+        await db.execute(delete(model).where(model.user_id == user_id))
+    await db.flush()
 
 
-def get_or_create_categories(db: Session, user_id: int) -> dict[str, Category]:
-    existing = {
-        c.name: c for c in db.scalars(select(Category).where(Category.user_id == user_id))
-    }
+async def get_or_create_categories(db: AsyncSession, user_id: int) -> dict[str, Category]:
+    rows = await db.scalars(select(Category).where(Category.user_id == user_id))
+    existing = {c.name: c for c in rows}
     for name in CATEGORIES:
         if name not in existing:
             existing[name] = Category(name=name, user_id=user_id)
             db.add(existing[name])
-    db.flush()
+    await db.flush()
     return existing
 
 
-def get_or_create_suppliers(db: Session, user_id: int) -> dict[str, Supplier]:
-    existing = {
-        s.name: s for s in db.scalars(select(Supplier).where(Supplier.user_id == user_id))
-    }
+async def get_or_create_suppliers(db: AsyncSession, user_id: int) -> dict[str, Supplier]:
+    rows = await db.scalars(select(Supplier).where(Supplier.user_id == user_id))
+    existing = {s.name: s for s in rows}
     for seed_supplier in SUPPLIERS:
         supplier = existing.get(seed_supplier.name)
         if supplier is None:
@@ -191,7 +190,7 @@ def get_or_create_suppliers(db: Session, user_id: int) -> dict[str, Supplier]:
             existing[seed_supplier.name] = supplier
         elif supplier.tax_id is None:
             supplier.tax_id = seed_supplier.tax_id
-    db.flush()
+    await db.flush()
     return existing
 
 
@@ -262,29 +261,28 @@ def build_invoices(
     return invoices
 
 
-def seed(db: Session, *, reset: bool) -> None:
-    user = ensure_demo_user(db)
+async def seed(db: AsyncSession, *, reset: bool) -> None:
+    user = await ensure_demo_user(db)
     if reset:
-        reset_demo_data(db, user.id)
+        await reset_demo_data(db, user.id)
 
-    categories = get_or_create_categories(db, user.id)
-    suppliers = get_or_create_suppliers(db, user.id)
+    categories = await get_or_create_categories(db, user.id)
+    suppliers = await get_or_create_suppliers(db, user.id)
 
     # Skip invoices that already exist so the script can be re-run safely.
-    existing = set(
-        db.execute(
-            select(Invoice.supplier_id, Invoice.number).where(Invoice.user_id == user.id)
-        ).all()
+    rows = await db.execute(
+        select(Invoice.supplier_id, Invoice.number).where(Invoice.user_id == user.id)
     )
+    existing = set(rows.all())
     new_invoices = [
         inv
         for inv in build_invoices(suppliers, categories, user.id)
         if (inv.supplier_id, inv.number) not in existing
     ]
     db.add_all(new_invoices)
-    db.commit()
+    await db.commit()
 
-    total = db.scalar(
+    total = await db.scalar(
         select(func.count()).select_from(Invoice).where(Invoice.user_id == user.id)
     )
     print(
@@ -292,6 +290,14 @@ def seed(db: Session, *, reset: bool) -> None:
         f"{len(suppliers)} suppliers, {len(categories)} categories."
     )
     print(f"Demo login: {DEMO_EMAIL} / {DEMO_PASSWORD}")
+
+
+async def _seed_and_close(*, reset: bool) -> None:
+    try:
+        async with SessionLocal() as db:
+            await seed(db, reset=reset)
+    finally:
+        await engine.dispose()
 
 
 def main() -> None:
@@ -303,8 +309,8 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    with SessionLocal() as db:
-        seed(db, reset=args.reset)
+    # psycopg cannot run in async mode on Windows' default ProactorEventLoop.
+    asyncio.run(_seed_and_close(reset=args.reset), loop_factory=asyncio.SelectorEventLoop)
 
 
 if __name__ == "__main__":

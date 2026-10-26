@@ -11,14 +11,14 @@ from invoice_api.main import app
 URL = "/api/health"
 
 
-def test_is_public_and_reports_ok(client):
-    response = client.get(URL)
+async def test_is_public_and_reports_ok(client):
+    response = await client.get(URL)
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_answers_503_when_the_database_is_down(client):
+async def test_answers_503_when_the_database_is_down(client):
     broken = MagicMock()
     broken.execute.side_effect = OperationalError("SELECT 1", {}, Exception("down"))
 
@@ -27,7 +27,7 @@ def test_answers_503_when_the_database_is_down(client):
 
     app.dependency_overrides[get_db] = broken_db
 
-    response = client.get(URL)
+    response = await client.get(URL)
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Database unavailable"}
