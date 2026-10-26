@@ -33,3 +33,8 @@ services:
       # A public demo: a lower ceiling than the default 5 USD a day for the whole service.
       - key: GLOBAL_DAILY_BUDGET_USD
         value: "2.00"
+      # Behind Render's proxy every visitor looks like one of a few proxy addresses (see the
+      # README), so the registration limit is effectively shared: allow more than the default 5.
+      # FORWARDED_ALLOW_IPS stays unset on purpose: trusting the header is forgeable here.
+      - key: REGISTER_MAX_PER_IP
+        value: "20"
