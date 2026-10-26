@@ -1,7 +1,15 @@
 from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from invoice_api.routers import auth, categories, extraction, invoices, suppliers, users
+from invoice_api.routers import (
+    auth,
+    categories,
+    extraction,
+    invoices,
+    suppliers,
+    usage,
+    users,
+)
 from invoice_api.services.extraction import ExtractionNotConfigured
 
 app = FastAPI(title="Invoice API")
@@ -22,5 +30,6 @@ api_router.include_router(extraction.router)
 api_router.include_router(invoices.router)
 api_router.include_router(auth.router)
 api_router.include_router(users.router)
+api_router.include_router(usage.router)
 
 app.include_router(api_router)

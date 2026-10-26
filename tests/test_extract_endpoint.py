@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -16,6 +17,7 @@ from invoice_api.services.extraction import (
     ExtractionUnavailable,
     get_extractor,
 )
+from tests.conftest import add_llm_call, user_id_of
 
 URL = "/api/invoices/extract"
 TEXT = "FACTURA A-1 Acme S.L. 15/03/2026 Base 100,00 IVA 21,00 Total 121,00"
@@ -472,3 +474,109 @@ def test_extracted_invoices_are_isolated_between_users(
 def test_extract_path_is_not_read_as_an_invoice_id(client, headers_a):
     assert client.get(URL, headers=headers_a).status_code == 422
     assert client.delete(URL, headers=headers_a).status_code == 422
+
+
+# --- daily budgets ----------------------------------------------------------
+
+
+@pytest.fixture
+def budgets(monkeypatch):
+    monkeypatch.setattr(settings, "USER_DAILY_BUDGET_USD", Decimal("0.10"))
+    monkeypatch.setattr(settings, "GLOBAL_DAILY_BUDGET_USD", Decimal("0.50"))
+
+
+def test_a_user_who_spent_their_budget_is_stopped_before_anything_is_spent(
+    client, db, headers_a, budgets, use_extractor
+):
+    add_llm_call(db, user_id_of(client, headers_a), "0.10")
+    extractor = use_extractor(succeed())
+
+    response = post(client, headers_a)
+
+    assert response.status_code == 429
+    assert response.json()["detail"] == "Daily extraction budget reached"
+    assert 1 <= int(response.headers["Retry-After"]) <= 24 * 60 * 60
+    assert extractor.calls == []  # the model was never asked
+    assert len(llm_calls(db)) == 1  # only the one we added
+    assert client.get("/api/invoices", headers=headers_a).json() == []
+
+
+def test_a_user_below_the_budget_can_extract(client, db, headers_a, budgets, use_extractor):
+    add_llm_call(db, user_id_of(client, headers_a), "0.09")
+    use_extractor(succeed())
+
+    assert post(client, headers_a).status_code == 201
+
+
+def test_one_users_budget_does_not_stop_another(
+    client, db, headers_a, headers_b, budgets, use_extractor
+):
+    add_llm_call(db, user_id_of(client, headers_a), "0.20")
+    use_extractor(succeed())
+
+    assert post(client, headers_b).status_code == 201
+    assert post(client, headers_a).status_code == 429
+
+
+def test_the_extraction_that_crosses_the_budget_is_served_and_the_next_one_is_not(
+    client, headers_a, monkeypatch, use_extractor
+):
+    # One extraction costs 0.00015 (1000 in / 100 out at the default prices).
+    monkeypatch.setattr(settings, "USER_DAILY_BUDGET_USD", Decimal("0.0001"))
+    use_extractor(succeed())
+
+    first = post(client, headers_a)
+    second = post(client, headers_a)
+
+    assert (first.status_code, second.status_code) == (201, 429)
+
+
+def test_failed_extractions_spend_budget_too(client, headers_a, monkeypatch, use_extractor):
+    monkeypatch.setattr(settings, "USER_DAILY_BUDGET_USD", Decimal("0.0001"))
+    use_extractor(
+        ExtractionInvalidOutput(
+            "no invoice",
+            [Attempt(AttemptOutcome.INVALID_OUTPUT, 1000, 100, 800, "total_amount: mismatch")],
+        )
+    )
+
+    failed = post(client, headers_a)
+    after = post(client, headers_a)
+
+    assert (failed.status_code, after.status_code) == (422, 429)
+
+
+def test_yesterdays_spending_does_not_block_today(
+    client, db, headers_a, budgets, use_extractor
+):
+    midnight = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+    add_llm_call(
+        db, user_id_of(client, headers_a), "5.00", created_at=midnight - timedelta(hours=1)
+    )
+    use_extractor(succeed())
+
+    assert post(client, headers_a).status_code == 201
+
+
+def test_when_the_whole_service_spent_its_budget_nobody_can_extract(
+    client, db, headers_a, headers_b, budgets, use_extractor
+):
+    add_llm_call(db, user_id_of(client, headers_b), "0.50")
+    extractor = use_extractor(succeed())
+
+    response = post(client, headers_a)  # this user has spent nothing
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Invoice extraction is temporarily unavailable"
+    assert "budget" not in response.text.lower()  # not the user's business
+    assert 1 <= int(response.headers["Retry-After"]) <= 24 * 60 * 60
+    assert extractor.calls == []
+
+
+def test_the_budget_does_not_replace_authentication(
+    client, db, headers_a, budgets, use_extractor
+):
+    add_llm_call(db, user_id_of(client, headers_a), "9.00")
+    use_extractor(succeed())
+
+    assert client.post(URL, json={"text": TEXT}).status_code == 401

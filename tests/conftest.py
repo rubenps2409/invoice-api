@@ -1,4 +1,6 @@
 from collections.abc import Callable, Generator
+from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -10,7 +12,7 @@ from sqlalchemy.orm import Session
 from invoice_api.config import settings
 from invoice_api.database import get_db
 from invoice_api.main import app
-from invoice_api.models import Base
+from invoice_api.models import Base, LlmCall
 
 TEST_DB_NAME = "invoice_test"
 
@@ -123,3 +125,27 @@ def make_invoice(client: TestClient) -> Callable[..., dict]:
         return response.json()
 
     return _make
+
+
+def add_llm_call(
+    db: Session, user_id: int, cost: str, created_at: datetime | None = None
+) -> None:
+    """Record a past call of the model costing `cost` USD, to set up a spending."""
+    db.add(
+        LlmCall(
+            user_id=user_id,
+            purpose="invoice_extraction",
+            model="m",
+            outcome="ok",
+            input_tokens=1000,
+            output_tokens=100,
+            cost_usd=Decimal(cost),
+            latency_ms=900,
+            **({"created_at": created_at} if created_at else {}),
+        )
+    )
+    db.commit()
+
+
+def user_id_of(client: TestClient, headers: dict[str, str]) -> int:
+    return client.get("/api/users/me", headers=headers).json()["id"]

@@ -157,6 +157,22 @@ run.
     repositories. Never commit real invoices or customer data.
 -   Do not weaken password hashing, token validation, ownership filters
     or isolation tests to make a test pass.
+-   Extraction spending is capped per user and for the whole service in
+    USD per UTC day (`USER_DAILY_BUDGET_USD`, `GLOBAL_DAILY_BUDGET_USD`),
+    summed from `llm_calls`, which also holds failed attempts. It is checked
+    in `routers/extraction.py` before the model is called: 429 for the
+    user's own limit, 503 (saying nothing about budgets) for the global
+    one, both with `Retry-After`. The extraction that crosses a limit is
+    still served. `GET /api/usage` shows the user's own figures only.
+-   Login and registration are limited per client IP (`LOGIN_*` and
+    `REGISTER_*` settings) with hashed keys in `rate_limit_events`. Failed
+    logins are counted per IP+email and per IP, never per email alone, or
+    anyone could lock somebody else out. The limit is checked before the
+    password is hashed.
+-   The IP comes from `request.client`. Behind a reverse proxy that is the
+    proxy's IP, so every user would share one limit: run uvicorn with
+    `--proxy-headers` and `--forwarded-allow-ips` set to the proxy. Never
+    read `X-Forwarded-For` in the code; any client can forge it.
 
 ## 6. LLM extraction behavior
 
