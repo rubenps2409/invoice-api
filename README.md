@@ -6,7 +6,8 @@ An asynchronous API that reads the text of an invoice, extracts its data with an
 **checks that the numbers add up** before trusting them, and stores the invoice for the
 authenticated user.
 
-**Live demo:** <https://invoice-api-cdkh.onrender.com/docs>
+**Live demo:** <https://invoice-api-cdkh.onrender.com> (web interface) and
+<https://invoice-api-cdkh.onrender.com/docs> (interactive API docs)
 
 > The demo runs on a free plan that **goes to sleep after 15 minutes without traffic**.
 > The first request after that took **42 seconds** when measured (Render says about a
@@ -52,8 +53,9 @@ that rejects what does not add up, and the controls a public endpoint that spend
 
 ## Try it
 
-Open the demo's `/docs`, register, press **Authorize**, and send this synthetic invoice to
-`POST /api/invoices/extract`:
+Open the demo, create an account and press **Use a sample** to load a synthetic invoice, or
+paste your own text. Through the API instead, register at `/docs`, press **Authorize**, and
+send this one to `POST /api/invoices/extract`:
 
 ```json
 {
@@ -62,6 +64,23 @@ Open the demo's `/docs`, register, press **Authorize**, and send this synthetic 
 ```
 
 It returns `201` with base `800.00`, tax `168.00`, withholding `120.00` and total `848.00`.
+
+## Web interface
+
+The API ships with a small web page (`/`) so it can be used without Swagger: sign in or create an
+account, paste an invoice and see the stored result, browse and filter the invoices, and manage
+the categories the extractor may pick from. It is plain HTML, CSS and JavaScript modules with no
+build step and no dependencies, served by the same FastAPI app, so there is no CORS to configure
+and nothing else to deploy. The API itself was not changed for it.
+
+- The page never turns text into HTML (supplier names and invoice text are shown as text nodes),
+  the server sends a Content-Security-Policy that only allows the page's own files (plus
+  `frame-ancestors 'none'`, `nosniff` and other hardening headers), and the token lives in
+  `sessionStorage`, so it disappears with the tab. Tests keep these rules, and the page was also
+  tried in a real browser with hostile names (`<img onerror=…>`, `<script>`) stored through the
+  API: they show up as plain text and nothing runs.
+- The API returns ids, not names, so the page also reads the suppliers and categories lists to
+  show names.
 
 ## Run it locally
 
@@ -72,7 +91,7 @@ cp .env.example .env     # then set SECRET_KEY (at least 32 characters) and the 
 docker compose up --build
 ```
 
-The API listens on <http://127.0.0.1:8000> (`/docs` for the interactive docs). The container
+The API listens on <http://127.0.0.1:8000>: the web page is at `/` and the interactive docs at `/docs`. The container
 applies the Alembic migrations before it starts. Without `ANTHROPIC_API_KEY` everything works
 except extraction, which answers `503`.
 
@@ -134,6 +153,8 @@ $0.14. The reports hold case ids, scores, tokens and cost, never invoice text.
   line by line, so an inflated base or tax can still pass the sum check.
 - There is no review step for uncertain extractions, and extraction is synchronous: a request
   waits for the model.
+- The web page is deliberately small: it lists, filters and extracts, but does not edit or delete
+  invoices or suppliers (the API does), and has no automated browser tests.
 - Registration is open. The budgets limit the damage, but enough accounts can use up the daily
   cap and pause extraction for everybody until 00:00 UTC.
 - Behind Render's proxy the app sees the proxy's address, not the visitor's, so the login and
@@ -152,6 +173,7 @@ src/invoice_api/
   schemas/      Pydantic contracts and the amount checks
   models/       SQLAlchemy tables
   services/     extraction, invoice creation, budgets, rate limits, concurrency cap
+  static/       the web page (HTML, CSS, JavaScript modules)
 migrations/     Alembic
 evals/          synthetic cases, scoring and the runner
 scripts/        demo data (development only) and a load test

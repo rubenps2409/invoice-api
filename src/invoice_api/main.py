@@ -1,8 +1,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from invoice_api.config import Environment, settings
 from invoice_api.database import engine
@@ -19,6 +21,32 @@ from invoice_api.routers import (
     users,
 )
 from invoice_api.services.extraction import ExtractionNotConfigured, close_client
+
+# The web page lives inside the package, so it is installed with it.
+_STATIC_DIR = Path(__file__).parent / "static"
+# Only the page's own files may run or load, and it may only talk to its own server. Sent as
+# a header (not a <meta>) so it also covers framing, and only on the page: /docs keeps working.
+_CONTENT_SECURITY_POLICY = (
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
+    "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
+_PAGE_HEADERS = {
+    "Content-Security-Policy": _CONTENT_SECURITY_POLICY,
+    "Cache-Control": "no-cache",  # revalidate (ETag) so a deploy is seen at once
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
+}
+
+
+class _StaticFiles(StaticFiles):
+    def file_response(self, *args, **kwargs):
+        response = super().file_response(*args, **kwargs)
+        response.headers.update(_PAGE_HEADERS)
+        return response
 
 
 @asynccontextmanager
@@ -55,6 +83,14 @@ def create_app(environment: Environment, enable_docs: bool | None = None) -> Fas
     api_router.include_router(usage.router)
     api_router.include_router(health.router)
     app.include_router(api_router)
+
+    # Only these two routes are added, so an unknown /api path still answers with the
+    # API's own JSON 404 (a catch-all mount at / would shadow it).
+    @app.get("/", include_in_schema=False)
+    async def home() -> FileResponse:
+        return FileResponse(_STATIC_DIR / "index.html", headers=_PAGE_HEADERS)
+
+    app.mount("/static", _StaticFiles(directory=_STATIC_DIR), name="static")
     return app
 
 
