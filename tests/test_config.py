@@ -38,6 +38,18 @@ def settings_with(secret_key: str) -> Settings:
     return Settings(_env_file=None, DATABASE_URL="postgresql://x", SECRET_KEY=secret_key)
 
 
+def test_an_empty_environment_variable_means_not_set(monkeypatch):
+    monkeypatch.setenv("ENABLE_DOCS", "")
+
+    assert settings_with("a" * SECRET_KEY_MIN_LENGTH).ENABLE_DOCS is None
+
+
+def test_the_docs_setting_reads_a_boolean(monkeypatch):
+    monkeypatch.setenv("ENABLE_DOCS", "true")
+
+    assert settings_with("a" * SECRET_KEY_MIN_LENGTH).ENABLE_DOCS is True
+
+
 def test_a_strong_secret_key_is_accepted():
     key = "a" * SECRET_KEY_MIN_LENGTH
 
@@ -80,4 +92,6 @@ def test_env_example_defaults_match_the_code():
         match = re.match(r"# ([A-Z][A-Z0-9_]*)=(.*)", line)
         if match and match[1] in Settings.model_fields:
             default = Settings.model_fields[match[1]].default
-            assert str(default) == match[2], match[1]
+            # A setting that is unset by default is documented with an empty value.
+            expected = "" if default is None else str(default)
+            assert expected == match[2], match[1]

@@ -97,7 +97,12 @@ to use `tests/` and exclude tests marked `eval` by default.
 Use the repository's existing `uv` commands. Typical checks are:
 
 -   `uv run pytest`
--   `uv run ruff check .`
+-   `uv run ruff check .` and `uv run ruff format --check .`
+
+`.github/workflows/ci.yml` runs these on every pull request and push to `main`,
+plus `alembic upgrade head` / `alembic check` and a `docker compose up` smoke
+test. It needs only `DATABASE_URL` and `SECRET_KEY` (no `.env`, no Anthropic key);
+keep it that way, and never add the paid eval to it.
 
 Confirm commands against the current configuration and run the relevant
 checks after changes. Do not claim a check passed unless it was actually
@@ -176,7 +181,10 @@ run.
 -   `ENVIRONMENT` (`development` by default, `production` in a deployment) hides
     `/docs`, `/redoc` and `/openapi.json`, switches the logs to JSON and makes
     `scripts/seed.py` refuse to run (it creates a known account with a known
-    password). `main.create_app(environment)` builds the app so tests can try both.
+    password). `ENABLE_DOCS` overrides the docs part alone (`true` shows them in a
+    public demo, `false` hides them in development); empty or unset follows
+    `ENVIRONMENT`. `main.create_app(environment, enable_docs)` builds the app so
+    tests can try each combination.
 -   Use synthetic invoice data in tests, evals, examples and public
     repositories. Never commit real invoices or customer data.
 -   Do not weaken password hashing, token validation, ownership filters

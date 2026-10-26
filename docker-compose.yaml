@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -14,6 +14,20 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: .
+    image: invoice-api
+    # Every setting comes from .env; only the database host differs inside Compose.
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   pgdata:

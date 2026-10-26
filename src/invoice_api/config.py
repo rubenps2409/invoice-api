@@ -23,11 +23,15 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        # `NAME=` (or a compose file passing an empty value) means "not set".
+        env_ignore_empty=True,
     )
 
     # production hides the API docs, formats logs as JSON and refuses to seed demo data.
     ENVIRONMENT: Environment = Environment.DEVELOPMENT
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    # The interactive API docs. Unset: shown in development, hidden in production.
+    ENABLE_DOCS: bool | None = None
 
     DATABASE_URL: str
     SECRET_KEY: str
