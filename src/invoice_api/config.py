@@ -1,4 +1,6 @@
 from decimal import Decimal
+from enum import StrEnum
+from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,12 +13,21 @@ SECRET_KEY_PLACEHOLDER = "generate-one-with-python-secrets-token_hex-32"
 SECRET_KEY_MIN_LENGTH = 32
 
 
+class Environment(StrEnum):
+    DEVELOPMENT = "development"
+    PRODUCTION = "production"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    # production hides the API docs, formats logs as JSON and refuses to seed demo data.
+    ENVIRONMENT: Environment = Environment.DEVELOPMENT
+    LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
     DATABASE_URL: str
     SECRET_KEY: str

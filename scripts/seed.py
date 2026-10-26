@@ -8,6 +8,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from invoice_api.config import Environment, settings
 from invoice_api.database import SessionLocal, engine
 from invoice_api.models import Category, Invoice, InvoiceStatus, Supplier, User
 from invoice_api.security import hash_password_async, verify_password_async
@@ -301,6 +302,9 @@ async def _seed_and_close(*, reset: bool) -> None:
 
 
 def main() -> None:
+    # Known name, known password: never create that account in a real deployment.
+    if settings.ENVIRONMENT is Environment.PRODUCTION:
+        raise SystemExit("Refusing to load demo data with ENVIRONMENT=production.")
     parser = argparse.ArgumentParser(description="Load synthetic sample data.")
     parser.add_argument(
         "--reset",
