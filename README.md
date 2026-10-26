@@ -12,7 +12,7 @@ authenticated user.
 > The first request after that took **42 seconds** when measured (Render says about a
 > minute); the following ones answer in about 0.2 s.
 
-<!-- The Swagger screenshot goes here. -->
+![Swagger UI: the extraction endpoint turns the text of an invoice into a stored invoice](docs/swagger-extract.png)
 
 ## The problem
 
@@ -47,6 +47,8 @@ that rejects what does not add up, and the controls a public endpoint that spend
 | POST, GET | `/api/invoices/extract`, `/api/invoices` | extract from text, list and filter |
 | GET, PATCH, DELETE | `/api/invoices/{id}` | |
 | POST, GET, PUT, DELETE | `/api/suppliers`, `/api/categories` (and `/{id}`) | |
+
+The same endpoint in the demo's interactive docs, with the answer of the live service.
 
 ## Try it
 
