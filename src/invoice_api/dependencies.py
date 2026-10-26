@@ -4,10 +4,12 @@ from fastapi import Depends, HTTPException, Path, Query, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from invoice_api.constants import MAX_PAGE_SIZE, POSTGRES_INT_MAX
+from invoice_api.constants import BEARER_SCHEME, POSTGRES_INT_MAX
 from invoice_api.database import get_db
 from invoice_api.models import User
 from invoice_api.security import decode_access_token
+
+_MAX_PAGE_SIZE = 100
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
@@ -23,7 +25,7 @@ def get_current_user(token: AccessToken, db: DbSession) -> User:
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED,
             "Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": BEARER_SCHEME},
         )
     return user
 
@@ -40,4 +42,4 @@ CurrentUserId = Annotated[int, Depends(get_current_user_id)]
 IdPath = Annotated[int, Path(ge=1, le=POSTGRES_INT_MAX)]
 
 Skip = Annotated[int, Query(ge=0, le=POSTGRES_INT_MAX)]
-Limit = Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)]
+Limit = Annotated[int, Query(ge=1, le=_MAX_PAGE_SIZE)]

@@ -21,6 +21,13 @@ if TYPE_CHECKING:
     from invoice_api.models.category import Category
     from invoice_api.models.supplier import Supplier
 
+INVOICE_NUMBER_UNIQUE = "uq_invoice_user_supplier_number"
+INVOICE_NUMBER_MAX_LENGTH = 100
+INVOICE_STATUS_MAX_LENGTH = 20
+# Amounts: up to 99,999,999.99
+INVOICE_AMOUNT_PRECISION = 10
+INVOICE_AMOUNT_SCALE = 2
+
 
 class InvoiceStatus(StrEnum):
     PENDING = "pending"
@@ -33,7 +40,7 @@ class Invoice(Base):
     __tablename__ = "invoices"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    number: Mapped[str] = mapped_column(String(100))
+    number: Mapped[str] = mapped_column(String(INVOICE_NUMBER_MAX_LENGTH))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -42,15 +49,21 @@ class Invoice(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     category_id: Mapped[int | None] = mapped_column(ForeignKey("categories.id"), index=True)
 
-    base_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
-    tax_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
-    total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2))
+    base_amount: Mapped[Decimal] = mapped_column(
+        Numeric(INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE)
+    )
+    tax_amount: Mapped[Decimal] = mapped_column(
+        Numeric(INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE)
+    )
+    total_amount: Mapped[Decimal] = mapped_column(
+        Numeric(INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE)
+    )
     issue_date: Mapped[date] = mapped_column(Date)
     status: Mapped[InvoiceStatus] = mapped_column(
         Enum(
             InvoiceStatus,
             native_enum=False,
-            length=20,
+            length=INVOICE_STATUS_MAX_LENGTH,
             values_callable=lambda e: [m.value for m in e],
         ),
         default=InvoiceStatus.PENDING,
@@ -60,7 +73,5 @@ class Invoice(Base):
     category: Mapped["Category | None"] = relationship(back_populates="invoices")
 
     __table_args__ = (
-        UniqueConstraint(
-            "user_id", "supplier_id", "number", name="uq_invoice_user_supplier_number"
-        ),
+        UniqueConstraint("user_id", "supplier_id", "number", name=INVOICE_NUMBER_UNIQUE),
     )

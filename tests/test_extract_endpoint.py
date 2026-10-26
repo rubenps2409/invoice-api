@@ -9,6 +9,7 @@ from invoice_api.models import LlmCall
 from invoice_api.schemas.extraction import ExtractedInvoice
 from invoice_api.services.extraction import (
     Attempt,
+    AttemptOutcome,
     ExtractionInvalidOutput,
     ExtractionResult,
     ExtractionTimeout,
@@ -28,7 +29,7 @@ EXTRACTED = {
     "total_amount": "121.00",
     "category_name": None,
 }
-OK_ATTEMPT = Attempt("ok", input_tokens=1000, output_tokens=100, latency_ms=900)
+OK_ATTEMPT = Attempt(AttemptOutcome.OK, input_tokens=1000, output_tokens=100, latency_ms=900)
 
 
 class FakeExtractor:
@@ -218,7 +219,7 @@ def test_cost_of_the_call_is_recorded(client, db, headers_a, use_extractor):
     me = client.get("/api/users/me", headers=headers_a).json()
     assert call.user_id == me["id"]
     assert call.model == "fake-model"
-    assert call.outcome == "ok"
+    assert call.outcome == AttemptOutcome.OK
     assert (call.input_tokens, call.output_tokens) == (1000, 100)
     assert call.cost_usd > Decimal(0)
 
@@ -295,8 +296,12 @@ def test_text_at_the_size_limit_is_accepted(client, headers_a, use_extractor):
             ExtractionInvalidOutput(
                 "The model did not return a valid invoice (total_amount: mismatch)",
                 [
-                    Attempt("invalid_output", 900, 40, 800, "total_amount: mismatch"),
-                    Attempt("invalid_output", 950, 40, 800, "total_amount: mismatch"),
+                    Attempt(
+                        AttemptOutcome.INVALID_OUTPUT, 900, 40, 800, "total_amount: mismatch"
+                    ),
+                    Attempt(
+                        AttemptOutcome.INVALID_OUTPUT, 950, 40, 800, "total_amount: mismatch"
+                    ),
                 ],
             ),
             422,
@@ -304,14 +309,18 @@ def test_text_at_the_size_limit_is_accepted(client, headers_a, use_extractor):
         (
             ExtractionTimeout(
                 "The model took too long to answer",
-                [Attempt("timeout", latency_ms=30000, detail="request timed out")],
+                [
+                    Attempt(
+                        AttemptOutcome.TIMEOUT, latency_ms=30000, detail="request timed out"
+                    )
+                ],
             ),
             504,
         ),
         (
             ExtractionUnavailable(
                 "The model API returned an error",
-                [Attempt("api_error", latency_ms=200, detail="http 500")],
+                [Attempt(AttemptOutcome.API_ERROR, latency_ms=200, detail="http 500")],
             ),
             502,
         ),
@@ -336,7 +345,9 @@ def test_failed_attempts_are_recorded_for_the_right_user(
     client, db, headers_a, headers_b, use_extractor
 ):
     use_extractor(
-        ExtractionTimeout("slow", [Attempt("timeout", latency_ms=30000, detail="t")])
+        ExtractionTimeout(
+            "slow", [Attempt(AttemptOutcome.TIMEOUT, latency_ms=30000, detail="t")]
+        )
     )
 
     post(client, headers_b)

@@ -15,6 +15,7 @@ from evals.scoring import FIELDS, score_case, summarize
 from invoice_api.schemas.extraction import ExtractedInvoice
 from invoice_api.services.extraction import (
     Attempt,
+    AttemptOutcome,
     ExtractionInvalidOutput,
     ExtractionResult,
     ExtractionTimeout,
@@ -130,7 +131,7 @@ def test_amounts_are_compared_as_numbers_not_text():
 
 
 def test_a_failed_extraction_counts_every_field_as_wrong():
-    error = ExtractionTimeout("slow", [Attempt("timeout")])
+    error = ExtractionTimeout("slow", [Attempt(AttemptOutcome.TIMEOUT)])
 
     score = score_case(CASE, error)
 
@@ -140,8 +141,8 @@ def test_a_failed_extraction_counts_every_field_as_wrong():
 
 
 def test_refusal_cases_are_correct_only_when_the_output_was_invalid():
-    refused = ExtractionInvalidOutput("no invoice", [Attempt("invalid_output")])
-    timed_out = ExtractionTimeout("slow", [Attempt("timeout")])
+    refused = ExtractionInvalidOutput("no invoice", [Attempt(AttemptOutcome.INVALID_OUTPUT)])
+    timed_out = ExtractionTimeout("slow", [Attempt(AttemptOutcome.TIMEOUT)])
 
     assert score_case(REFUSAL, refused).correct
     assert not score_case(REFUSAL, timed_out).correct  # an outage is not a refusal
@@ -191,9 +192,11 @@ class PerfectExtractor:
 
     def extract(self, text, categories):
         case = next(c for c in CASES if c.text == text)
-        attempt = Attempt("ok", input_tokens=1000, output_tokens=100)
+        attempt = Attempt(AttemptOutcome.OK, input_tokens=1000, output_tokens=100)
         if case.expected is None:
-            raise ExtractionInvalidOutput("no invoice", [Attempt("invalid_output", 800, 20)])
+            raise ExtractionInvalidOutput(
+                "no invoice", [Attempt(AttemptOutcome.INVALID_OUTPUT, 800, 20)]
+            )
         return ExtractionResult(ExtractedInvoice.model_validate(case.expected), [attempt])
 
 
@@ -201,7 +204,7 @@ class BrokenExtractor:
     model = "fake-model"
 
     def extract(self, text, categories):
-        raise ExtractionTimeout("slow", [Attempt("timeout")])
+        raise ExtractionTimeout("slow", [Attempt(AttemptOutcome.TIMEOUT)])
 
 
 def test_a_perfect_extractor_scores_one_hundred_percent():
@@ -267,13 +270,17 @@ class FlakyExtractor:
     def extract(self, text, categories):
         case = next(c for c in CASES if c.text == text)
         if case.expected is None:
-            raise ExtractionInvalidOutput("no invoice", [Attempt("invalid_output")])
+            raise ExtractionInvalidOutput(
+                "no invoice", [Attempt(AttemptOutcome.INVALID_OUTPUT)]
+            )
         data = dict(case.expected)
         if case.id == self.flaky_case:
             self.calls += 1
             if self.calls % 2 == 0:
                 data["issue_date"] = "2026-05-02"
-        return ExtractionResult(ExtractedInvoice.model_validate(data), [Attempt("ok", 10, 5)])
+        return ExtractionResult(
+            ExtractedInvoice.model_validate(data), [Attempt(AttemptOutcome.OK, 10, 5)]
+        )
 
 
 def test_repeating_a_stable_extractor_passes_every_case_every_time():
@@ -340,13 +347,19 @@ class RetryingExtractor:
         case = next(c for c in CASES if c.text == text)
         if case.expected is None:
             raise ExtractionInvalidOutput(
-                "no invoice", [Attempt("invalid_output"), Attempt("invalid_output")]
+                "no invoice",
+                [
+                    Attempt(AttemptOutcome.INVALID_OUTPUT),
+                    Attempt(AttemptOutcome.INVALID_OUTPUT),
+                ],
             )
-        attempts = [Attempt("ok", 10, 5)]
+        attempts = [Attempt(AttemptOutcome.OK, 10, 5)]
         if case.id == self.retried_case:
             self.calls += 1
             if self.calls % 2 == 1:
-                attempts.insert(0, Attempt("invalid_output", 10, 5, detail="bad json"))
+                attempts.insert(
+                    0, Attempt(AttemptOutcome.INVALID_OUTPUT, 10, 5, detail="bad json")
+                )
         return ExtractionResult(ExtractedInvoice.model_validate(case.expected), attempts)
 
 

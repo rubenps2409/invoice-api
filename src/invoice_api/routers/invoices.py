@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlalchemy import select
 
-from invoice_api.constants import DEFAULT_PAGE_SIZE
+from invoice_api.constants import DEFAULT_PAGE_SIZE, INVOICE_DUPLICATE_DETAIL
 from invoice_api.db_helpers import commit_or_conflict
 from invoice_api.dependencies import CurrentUserId, DbSession, IdPath, Limit, Skip
 from invoice_api.models import Category, Invoice, InvoiceStatus, Supplier
@@ -18,7 +18,7 @@ from invoice_api.schemas.invoice import (
 
 router = APIRouter(prefix="/invoices", tags=["invoices"])
 
-_DUPLICATE = "An invoice with this number already exists for this supplier"
+_REFERENCE_REMOVED = "Supplier or category was removed, retry"
 _UNPROCESSABLE = status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
@@ -64,8 +64,8 @@ def create_invoice(data: InvoiceCreate, db: DbSession, user_id: CurrentUserId):
     # The supplier/category may be deleted between the check and the commit.
     commit_or_conflict(
         db,
-        unique_detail=_DUPLICATE,
-        fk_detail="Supplier or category was removed, retry",
+        unique_detail=INVOICE_DUPLICATE_DETAIL,
+        fk_detail=_REFERENCE_REMOVED,
     )
     return invoice
 
@@ -134,8 +134,8 @@ def update_invoice(
         setattr(invoice, field, value)
     commit_or_conflict(
         db,
-        unique_detail=_DUPLICATE,
-        fk_detail="Supplier or category was removed, retry",
+        unique_detail=INVOICE_DUPLICATE_DETAIL,
+        fk_detail=_REFERENCE_REMOVED,
     )
     return invoice
 

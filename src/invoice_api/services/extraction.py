@@ -11,6 +11,7 @@ import re
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 from functools import lru_cache
 
 import anthropic
@@ -24,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 # Our own retries only cover bad model OUTPUT. Network/server failures are
 # retried by the SDK (LLM_MAX_RETRIES); counting both here would multiply cost.
-MAX_OUTPUT_ATTEMPTS = 2
+_MAX_OUTPUT_ATTEMPTS = 2
 
 SYSTEM_PROMPT = """\
 You extract structured data from the text of a single invoice.
@@ -109,11 +110,18 @@ _FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL)
 # --- results and errors ------------------------------------------------------
 
 
+class AttemptOutcome(StrEnum):
+    OK = "ok"
+    INVALID_OUTPUT = "invalid_output"
+    TIMEOUT = "timeout"
+    API_ERROR = "api_error"
+
+
 @dataclass(frozen=True)
 class Attempt:
     """One call to the model, successful or not. Every attempt costs tokens."""
 
-    outcome: str  # ok | invalid_output | timeout | api_error
+    outcome: AttemptOutcome
     input_tokens: int = 0
     output_tokens: int = 0
     latency_ms: int = 0
@@ -222,7 +230,7 @@ class InvoiceExtractor:
         *,
         model: str,
         max_output_tokens: int,
-        max_attempts: int = MAX_OUTPUT_ATTEMPTS,
+        max_attempts: int = _MAX_OUTPUT_ATTEMPTS,
     ):
         self._client = client
         self._model = model
@@ -250,16 +258,20 @@ class InvoiceExtractor:
                     messages=messages,
                 )
             except anthropic.APITimeoutError as exc:
-                attempts.append(self._failed("timeout", started, "request timed out"))
+                attempts.append(
+                    self._failed(AttemptOutcome.TIMEOUT, started, "request timed out")
+                )
                 self._log(attempts[-1])
                 raise ExtractionTimeout("The model took too long to answer", attempts) from exc
             except anthropic.APIConnectionError as exc:
-                attempts.append(self._failed("api_error", started, "connection error"))
+                attempts.append(
+                    self._failed(AttemptOutcome.API_ERROR, started, "connection error")
+                )
                 self._log(attempts[-1])
                 raise ExtractionUnavailable("Could not reach the model API", attempts) from exc
             except anthropic.APIStatusError as exc:
                 detail = f"http {exc.status_code}"
-                attempts.append(self._failed("api_error", started, detail))
+                attempts.append(self._failed(AttemptOutcome.API_ERROR, started, detail))
                 self._log(attempts[-1])
                 raise ExtractionUnavailable(
                     "The model API returned an error", attempts
@@ -278,7 +290,7 @@ class InvoiceExtractor:
                 last_problem = str(exc)
                 attempts.append(
                     Attempt(
-                        "invalid_output",
+                        AttemptOutcome.INVALID_OUTPUT,
                         input_tokens=input_tokens,
                         output_tokens=output_tokens,
                         latency_ms=latency_ms,
@@ -300,7 +312,7 @@ class InvoiceExtractor:
 
             attempts.append(
                 Attempt(
-                    "ok",
+                    AttemptOutcome.OK,
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
                     latency_ms=latency_ms,
@@ -314,7 +326,7 @@ class InvoiceExtractor:
         )
 
     @staticmethod
-    def _failed(outcome: str, started: float, detail: str) -> Attempt:
+    def _failed(outcome: AttemptOutcome, started: float, detail: str) -> Attempt:
         return Attempt(
             outcome,
             latency_ms=int((time.perf_counter() - started) * 1000),

@@ -4,6 +4,7 @@ from typing import Annotated
 from pydantic import AfterValidator, Field, StringConstraints
 
 from invoice_api.constants import POSTGRES_INT_MAX
+from invoice_api.models.invoice import INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE
 from invoice_api.normalization import normalize_tax_id
 
 
@@ -27,6 +28,11 @@ Str255 = Annotated[
 ]
 
 
+# Cap on what a client may send; separators are removed afterwards, so it is
+# larger than SUPPLIER_TAX_ID_MAX_LENGTH, which applies to the normalised value.
+_TAX_ID_INPUT_MAX_LENGTH = 50
+
+
 def _valid_tax_id(value: str) -> str:
     tax_id = normalize_tax_id(value)
     if tax_id is None:
@@ -38,11 +44,18 @@ def _valid_tax_id(value: str) -> str:
 # mistake is reported. (Model output uses a lenient variant that drops it.)
 TaxId = Annotated[
     str,
-    StringConstraints(strip_whitespace=True, max_length=50),
+    StringConstraints(strip_whitespace=True, max_length=_TAX_ID_INPUT_MAX_LENGTH),
     AfterValidator(_valid_tax_id),
 ]
 
 DbId = Annotated[int, Field(ge=1, le=POSTGRES_INT_MAX)]
 
-# Numeric(10, 2): up to 99,999,999.99. Negatives are allowed (credit notes)
-Money = Annotated[Decimal, Field(max_digits=10, decimal_places=2, allow_inf_nan=False)]
+# Same precision as the invoice columns. Negatives are allowed (credit notes)
+Money = Annotated[
+    Decimal,
+    Field(
+        max_digits=INVOICE_AMOUNT_PRECISION,
+        decimal_places=INVOICE_AMOUNT_SCALE,
+        allow_inf_nan=False,
+    ),
+]

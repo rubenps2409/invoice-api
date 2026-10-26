@@ -3,4 +3,10 @@
 POSTGRES_INT_MAX = 2_147_483_647
 
 DEFAULT_PAGE_SIZE = 20
-MAX_PAGE_SIZE = 100
+
+# Value of the WWW-Authenticate header on 401 responses.
+BEARER_SCHEME = "Bearer"
+
+# One message for the 409 whether the duplicate is found by the invoice
+# endpoints or by the extraction.
+INVOICE_DUPLICATE_DETAIL = "An invoice with this number already exists for this supplier"

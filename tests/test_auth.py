@@ -5,6 +5,7 @@ import pytest
 from sqlalchemy import select
 
 from invoice_api.config import settings
+from invoice_api.main import app
 from invoice_api.models import User
 from tests.conftest import PASSWORD, create_user, login_headers
 
@@ -282,6 +283,17 @@ def test_login_with_very_long_password_returns_401(client):
     )
 
     assert response.status_code == 401
+
+
+def test_the_documented_token_url_is_the_real_login_route(client):
+    """The token URL is written separately from the router prefixes; if they
+    drift apart, the "Authorize" button of the API docs stops working."""
+    schemes = app.openapi()["components"]["securitySchemes"]
+    (scheme,) = schemes.values()
+
+    assert "/" + scheme["flows"]["password"]["tokenUrl"].lstrip("/") == app.url_path_for(
+        "login"
+    )
 
 
 def test_login_requires_form_data_not_json(client):

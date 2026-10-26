@@ -3,9 +3,12 @@
 import re
 import unicodedata
 
+from invoice_api.models.supplier import SUPPLIER_TAX_ID_MAX_LENGTH
+
+_TAX_ID_MIN_LENGTH = 5
 _TAX_ID_SEPARATORS = re.compile(r"[\s.\-/]")
-# 5-20 letters/digits with at least one digit: rejects "N/A", "none", "unknown".
-_TAX_ID = re.compile(r"(?=.*\d)[A-Z0-9]{5,20}")
+# Letters/digits with at least one digit: rejects "N/A", "none", "unknown".
+_TAX_ID = re.compile(rf"(?=.*\d)[A-Z0-9]{{{_TAX_ID_MIN_LENGTH},{SUPPLIER_TAX_ID_MAX_LENGTH}}}")
 _PUNCTUATION = re.compile(r"[^\w\s]")
 
 # Legal forms. They are only dropped from the END of a name, so a name that

@@ -53,6 +53,19 @@ models in models, and reusable business/provider logic in services,
 following the existing structure. Avoid moving code across layers unless
 there is a clear benefit.
 
+Constants and literals:
+
+-   A constant used by several modules goes in `constants.py`. A constant
+    used by one module is declared in that module, with a leading
+    underscore unless another module or a test imports it.
+-   Exception: constraint names and column sizes live in their model file
+    even when other modules import them (see section 4).
+-   A user-facing message returned from more than one place has a single
+    definition. Do not repeat the literal.
+-   Use `status.HTTP_*` names instead of numeric status codes, and a
+    `StrEnum` for a fixed set of values (e.g. `AttemptOutcome`) instead of
+    loose strings.
+
 ## 3. Stack and tooling
 
 The repository currently specifies: - Python `>=3.13` - `uv` for
@@ -99,6 +112,22 @@ run.
     within the authenticated user's data.
 -   Check existing migrations and tests before changing model
     constraints, enum values, field names or database types.
+-   Name every constraint explicitly, through a constant declared in its
+    model file (`<ENTITY>_<FIELD>_UNIQUE`, e.g. `SUPPLIER_TAX_ID_UNIQUE`).
+    Never write a constraint name as a literal in a router or service.
+    Migrations are the exception: they are frozen snapshots and keep
+    literal names.
+-   Give every column length and numeric precision a named constant in
+    its model file (`<ENTITY>_<FIELD>_MAX_LENGTH`, `_PRECISION`,
+    `_SCALE`), and import it wherever something else must match the
+    column. Do not repeat the number in a schema or service.
+-   The reusable string types in `schemas/common.py` (`Str100`, `Str255`)
+    cannot import column lengths, so `tests/test_schema_matches_columns.py`
+    keeps them in step. Add the new field to that test when you add a
+    text field.
+-   When a table has more than one unique constraint, pass
+    `constraint_details` to `commit_or_conflict` so each one returns its
+    own 409 message.
 
 ## 5. Security and privacy
 

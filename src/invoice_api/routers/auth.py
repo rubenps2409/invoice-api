@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 
+from invoice_api.constants import BEARER_SCHEME
 from invoice_api.db_helpers import commit_or_conflict
 from invoice_api.dependencies import DbSession
 from invoice_api.models import User
@@ -39,6 +40,6 @@ def login(form: Annotated[OAuth2PasswordRequestForm, Depends()], db: DbSession):
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED,
             _INVALID_CREDENTIALS,
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={"WWW-Authenticate": BEARER_SCHEME},
         )
     return Token(access_token=create_access_token(user.id))

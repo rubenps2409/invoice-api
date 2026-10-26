@@ -1,10 +1,12 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from invoice_api.models.user import USER_EMAIL_MAX_LENGTH
+
 
 class UserCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    email: EmailStr = Field(max_length=255)
+    email: EmailStr = Field(max_length=USER_EMAIL_MAX_LENGTH)
 
     @field_validator("email")
     @classmethod

@@ -1,8 +1,9 @@
 from datetime import date
 from decimal import Decimal
+from types import SimpleNamespace
 
 import pytest
-from psycopg.errors import NotNullViolation
+from psycopg.errors import NotNullViolation, UniqueViolation
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
@@ -363,6 +364,21 @@ def test_same_number_and_supplier_for_another_user_is_fine(db, user, other_user)
     create_invoice_from_extraction(db, other_user.id, extracted())
 
     assert count(db, Invoice) == 2
+
+
+def test_a_unique_violation_of_another_constraint_is_not_reported_as_a_duplicate(
+    db, user, monkeypatch
+):
+    class OtherConstraint(UniqueViolation):
+        diag = SimpleNamespace(constraint_name="uq_something_else")  # type: ignore[assignment]
+
+    def failing_commit():
+        raise IntegrityError("INSERT ...", {}, OtherConstraint("dup"))
+
+    monkeypatch.setattr(db, "commit", failing_commit)
+
+    with pytest.raises(IntegrityError):
+        create_invoice_from_extraction(db, user.id, extracted())
 
 
 def test_other_commit_errors_are_not_reported_as_duplicates(db, user, monkeypatch):

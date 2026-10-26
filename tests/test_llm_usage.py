@@ -5,8 +5,19 @@ from sqlalchemy import select
 
 from invoice_api.config import settings
 from invoice_api.models import LlmCall, User
-from invoice_api.services.extraction import Attempt
+from invoice_api.services.extraction import Attempt, AttemptOutcome
 from invoice_api.services.llm_usage import estimate_cost_usd, record_attempts
+
+
+def test_every_outcome_fits_the_column_and_is_stored_as_plain_text():
+    assert all(len(outcome) <= LlmCall.outcome.type.length for outcome in AttemptOutcome)  # type: ignore[attr-defined]
+    assert {str(o) for o in AttemptOutcome} == {
+        "ok",
+        "invalid_output",
+        "timeout",
+        "api_error",
+    }
+
 
 PRICES = {
     "input_price_per_mtok": Decimal("0.10"),
@@ -58,14 +69,14 @@ def user(db):
 
 def test_one_row_is_stored_per_attempt(db, user):
     attempts = [
-        Attempt("invalid_output", 900, 40, 800, "total_amount: mismatch"),
-        Attempt("ok", 1000, 100, 1200),
+        Attempt(AttemptOutcome.INVALID_OUTPUT, 900, 40, 800, "total_amount: mismatch"),
+        Attempt(AttemptOutcome.OK, 1000, 100, 1200),
     ]
 
     record_attempts(db, user.id, attempts, model="some-model")
 
     rows = db.scalars(select(LlmCall).order_by(LlmCall.id)).all()
-    assert [r.outcome for r in rows] == ["invalid_output", "ok"]
+    assert [r.outcome for r in rows] == [AttemptOutcome.INVALID_OUTPUT, AttemptOutcome.OK]
     first, second = rows
     assert first.user_id == user.id
     assert first.purpose == "invoice_extraction"
@@ -80,7 +91,7 @@ def test_cost_uses_the_configured_prices(db, user, monkeypatch):
     monkeypatch.setattr(settings, "LLM_INPUT_PRICE_PER_MTOK", Decimal(1))
     monkeypatch.setattr(settings, "LLM_OUTPUT_PRICE_PER_MTOK", Decimal(2))
 
-    (call,) = record_attempts(db, user.id, [Attempt("ok", 1000, 500)], model="m")
+    (call,) = record_attempts(db, user.id, [Attempt(AttemptOutcome.OK, 1000, 500)], model="m")
 
     assert call.cost_usd == Decimal("0.00200000")
 
@@ -89,11 +100,11 @@ def test_failed_attempts_without_tokens_are_recorded_with_zero_cost(db, user):
     (call,) = record_attempts(
         db,
         user.id,
-        [Attempt("timeout", latency_ms=30000, detail="request timed out")],
+        [Attempt(AttemptOutcome.TIMEOUT, latency_ms=30000, detail="request timed out")],
         model="m",
     )
 
-    assert call.outcome == "timeout"
+    assert call.outcome == AttemptOutcome.TIMEOUT
     assert call.input_tokens == call.output_tokens == 0
     assert call.cost_usd == 0
 
@@ -101,7 +112,9 @@ def test_failed_attempts_without_tokens_are_recorded_with_zero_cost(db, user):
 def test_long_detail_is_truncated_to_fit_the_column(db, user):
     long_detail = "x" * 1000
 
-    record_attempts(db, user.id, [Attempt("invalid_output", 1, 1, 1, long_detail)], model="m")
+    record_attempts(
+        db, user.id, [Attempt(AttemptOutcome.INVALID_OUTPUT, 1, 1, 1, long_detail)], model="m"
+    )
 
     stored = db.scalar(select(LlmCall.detail))
     assert stored is not None
@@ -114,7 +127,7 @@ def test_no_attempts_stores_nothing(db, user):
 
 
 def test_records_survive_a_later_rollback(db, user):
-    record_attempts(db, user.id, [Attempt("ok", 10, 5, 100)], model="m")
+    record_attempts(db, user.id, [Attempt(AttemptOutcome.OK, 10, 5, 100)], model="m")
 
     db.rollback()  # e.g. the request fails afterwards
 

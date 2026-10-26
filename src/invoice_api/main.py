@@ -1,4 +1,4 @@
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from invoice_api.routers import auth, categories, extraction, invoices, suppliers, users
@@ -10,7 +10,8 @@ app = FastAPI(title="Invoice API")
 @app.exception_handler(ExtractionNotConfigured)
 def extraction_not_configured(request: Request, exc: ExtractionNotConfigured):
     return JSONResponse(
-        status_code=503, content={"detail": "Invoice extraction is not available"}
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={"detail": "Invoice extraction is not available"},
     )
 
 

@@ -59,7 +59,7 @@ def test_each_unique_constraint_can_have_its_own_message(violated, expected):
         commit_or_conflict(
             _as_session(session),
             unique_detail="duplicate",
-            unique_details={"uq_tax": "tax id taken"},
+            constraint_details={"uq_tax": "tax id taken"},
         )
 
     assert exc.value.status_code == 409

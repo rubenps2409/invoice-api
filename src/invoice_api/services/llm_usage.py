@@ -5,11 +5,13 @@ from sqlalchemy.orm import Session
 
 from invoice_api.config import settings
 from invoice_api.models import LlmCall
+from invoice_api.models.llm_call import LLM_CALL_COST_SCALE, LLM_CALL_DETAIL_MAX_LENGTH
 from invoice_api.services.extraction import Attempt
 
 _PER_MILLION = Decimal(1_000_000)
-_COST_STEP = Decimal("0.00000001")  # matches Numeric(12, 8)
-_DETAIL_MAX = 255  # LlmCall.detail column length
+_COST_STEP = Decimal(1).scaleb(-LLM_CALL_COST_SCALE)  # smallest step of the column
+
+_PURPOSE_INVOICE_EXTRACTION = "invoice_extraction"
 
 
 def estimate_cost_usd(
@@ -32,7 +34,7 @@ def record_attempts(
     attempts: Sequence[Attempt],
     *,
     model: str,
-    purpose: str = "invoice_extraction",
+    purpose: str = _PURPOSE_INVOICE_EXTRACTION,
 ) -> list[LlmCall]:
     """Store one row per attempt and COMMIT.
 
@@ -54,7 +56,7 @@ def record_attempts(
                 output_price_per_mtok=settings.LLM_OUTPUT_PRICE_PER_MTOK,
             ),
             latency_ms=attempt.latency_ms,
-            detail=attempt.detail[:_DETAIL_MAX] if attempt.detail else None,
+            detail=attempt.detail[:LLM_CALL_DETAIL_MAX_LENGTH] if attempt.detail else None,
         )
         for attempt in attempts
     ]

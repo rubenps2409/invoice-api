@@ -12,6 +12,7 @@ from invoice_api.services import extraction
 from invoice_api.services.extraction import (
     FEW_SHOT_EXAMPLES,
     SYSTEM_PROMPT,
+    AttemptOutcome,
     ExtractionInvalidOutput,
     ExtractionNotConfigured,
     ExtractionTimeout,
@@ -90,7 +91,7 @@ def test_valid_answer_returns_invoice_and_records_tokens():
     assert len(result.attempts) == 1
     attempt = result.attempts[0]
     assert (attempt.outcome, attempt.input_tokens, attempt.output_tokens) == (
-        "ok",
+        AttemptOutcome.OK,
         1234,
         56,
     )
@@ -218,7 +219,10 @@ def test_invalid_output_is_retried_once_with_feedback():
     result = make_extractor(client).extract("text")
 
     assert len(client.calls) == 2
-    assert [a.outcome for a in result.attempts] == ["invalid_output", "ok"]
+    assert [a.outcome for a in result.attempts] == [
+        AttemptOutcome.INVALID_OUTPUT,
+        AttemptOutcome.OK,
+    ]
     assert result.attempts[0].input_tokens == 900
     feedback = client.calls[1]["messages"][-2:]
     assert feedback[0] == {"role": "assistant", "content": "not json at all"}
@@ -255,7 +259,7 @@ def test_output_that_never_validates_raises_after_max_attempts(bad):
         make_extractor(client).extract("text")
 
     assert len(client.calls) == 2
-    assert [a.outcome for a in exc.value.attempts] == ["invalid_output"] * 2
+    assert [a.outcome for a in exc.value.attempts] == [AttemptOutcome.INVALID_OUTPUT] * 2
     assert exc.value.attempts[0].input_tokens == 800
 
 
@@ -265,7 +269,10 @@ def test_truncated_answer_counts_as_invalid():
 
     result = make_extractor(client).extract("text")
 
-    assert [a.outcome for a in result.attempts] == ["invalid_output", "ok"]
+    assert [a.outcome for a in result.attempts] == [
+        AttemptOutcome.INVALID_OUTPUT,
+        AttemptOutcome.OK,
+    ]
     assert "max_tokens" in (result.attempts[0].detail or "")
 
 
@@ -288,7 +295,7 @@ def test_timeout_raises_without_retrying():
         make_extractor(client).extract("text")
 
     assert len(client.calls) == 1
-    assert exc.value.attempts[0].outcome == "timeout"
+    assert exc.value.attempts[0].outcome == AttemptOutcome.TIMEOUT
 
 
 def test_connection_error_raises_unavailable():
@@ -298,7 +305,7 @@ def test_connection_error_raises_unavailable():
         make_extractor(client).extract("text")
 
     assert len(client.calls) == 1
-    assert exc.value.attempts[0].outcome == "api_error"
+    assert exc.value.attempts[0].outcome == AttemptOutcome.API_ERROR
 
 
 @pytest.mark.parametrize(

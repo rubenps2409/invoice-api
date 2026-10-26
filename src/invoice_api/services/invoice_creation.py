@@ -5,11 +5,12 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from invoice_api.constants import INVOICE_DUPLICATE_DETAIL
 from invoice_api.models import Category, Invoice, InvoiceStatus, Supplier
+from invoice_api.models.invoice import INVOICE_NUMBER_UNIQUE
+from invoice_api.models.supplier import SUPPLIER_NAME_MAX_LENGTH
 from invoice_api.normalization import supplier_name_key
 from invoice_api.schemas.extraction import ExtractedInvoice
-
-_NAME_MAX = 255  # Supplier.name column length
 
 
 class DuplicateInvoiceError(Exception):
@@ -52,7 +53,7 @@ def _free_name(db: Session, user_id: int, name: str, tax_id: str | None) -> str:
     if taken is None or tax_id is None:
         return name
     suffix = f" ({tax_id})"
-    return name[: _NAME_MAX - len(suffix)] + suffix
+    return name[: SUPPLIER_NAME_MAX_LENGTH - len(suffix)] + suffix
 
 
 def _create_supplier(db: Session, user_id: int, name: str, tax_id: str | None) -> Supplier:
@@ -132,9 +133,11 @@ def create_invoice_from_extraction(
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        if isinstance(exc.orig, UniqueViolation):
-            raise DuplicateInvoiceError(
-                "An invoice with this number already exists for this supplier"
-            ) from exc
+        cause = exc.orig
+        if (
+            isinstance(cause, UniqueViolation)
+            and cause.diag.constraint_name == INVOICE_NUMBER_UNIQUE
+        ):
+            raise DuplicateInvoiceError(INVOICE_DUPLICATE_DETAIL) from exc
         raise
     return invoice
