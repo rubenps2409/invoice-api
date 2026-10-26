@@ -53,6 +53,7 @@ class Invoice(Base):
     base_amount: Mapped[Decimal] = mapped_column(
         Numeric(INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE)
     )
+
     tax_amount: Mapped[Decimal] = mapped_column(
         Numeric(INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE)
     )
@@ -60,6 +61,7 @@ class Invoice(Base):
     withholding_amount: Mapped[Decimal] = mapped_column(
         Numeric(INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE)
     )
+
     total_amount: Mapped[Decimal] = mapped_column(
         Numeric(INVOICE_AMOUNT_PRECISION, INVOICE_AMOUNT_SCALE)
     )

@@ -1,9 +1,14 @@
 from decimal import Decimal
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from invoice_api.constants import RATE_LIMIT_MAX_WINDOW_MINUTES
+
+# The value .env.example ships with: it is public, so it must never sign tokens.
+SECRET_KEY_PLACEHOLDER = "generate-one-with-python-secrets-token_hex-32"
+# token_hex(32) gives 64 characters; HS256 wants at least 32 bytes of key.
+SECRET_KEY_MIN_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -17,6 +22,17 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def _secret_key_is_strong(cls, value: str) -> str:
+        if value == SECRET_KEY_PLACEHOLDER or len(value) < SECRET_KEY_MIN_LENGTH:
+            raise ValueError(
+                f"SECRET_KEY must be at least {SECRET_KEY_MIN_LENGTH} characters and not "
+                "the .env.example placeholder; generate one with "
+                'python -c "import secrets; print(secrets.token_hex(32))"'
+            )
+        return value
 
     # LLM extraction. The key is optional so the app and the tests run without
     # it; the extraction service fails with a clear error if it is missing.
