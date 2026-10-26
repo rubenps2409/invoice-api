@@ -34,6 +34,13 @@ The project uses a `src` layout:
 -   `src/invoice_api/models/`: SQLAlchemy models.
 -   `src/invoice_api/services/`: business logic, LLM extraction, invoice
     creation and LLM usage/cost recording.
+-   `src/invoice_api/static/`: the web page (HTML, CSS and ES modules, no build
+    step, no dependencies), served by `main.py` at `/` and `/static`. It only
+    uses the existing `/api` endpoints. Rules, kept by `tests/test_frontend.py`:
+    never build markup from strings (`h()` in `dom.js` makes text nodes), keep
+    the page's Content-Security-Policy `<meta>` (it must not cover `/docs`),
+    no inline scripts or styles, no third-party URLs, all UI text in
+    `strings.js`.
 -   `src/invoice_api/security.py` and `dependencies.py`: token/password
     security and shared request dependencies. The app is async end to end
     (`AsyncSession`, `AsyncAnthropic`): endpoints, dependencies and services are
