@@ -38,6 +38,23 @@ def settings_with(secret_key: str) -> Settings:
     return Settings(_env_file=None, DATABASE_URL="postgresql://x", SECRET_KEY=secret_key)
 
 
+@pytest.mark.parametrize("scheme", ["postgres", "postgresql"])
+def test_a_plain_postgres_url_gets_the_psycopg_driver(scheme):
+    url = f"{scheme}://u:p@ep-x.neon.tech/db?sslmode=require"
+
+    settings = Settings(_env_file=None, DATABASE_URL=url, SECRET_KEY="a" * 32)
+
+    assert (
+        settings.DATABASE_URL == "postgresql+psycopg://u:p@ep-x.neon.tech/db?sslmode=require"
+    )
+
+
+def test_a_url_that_already_names_its_driver_is_kept():
+    url = "postgresql+psycopg://u:p@db:5432/x"
+
+    assert Settings(_env_file=None, DATABASE_URL=url, SECRET_KEY="a" * 32).DATABASE_URL == url
+
+
 def test_an_empty_environment_variable_means_not_set(monkeypatch):
     monkeypatch.setenv("ENABLE_DOCS", "")
 

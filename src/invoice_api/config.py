@@ -38,6 +38,16 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def _use_the_psycopg_driver(cls, value: str) -> str:
+        # Hosts hand out `postgres://` or `postgresql://`, which SQLAlchemy would read
+        # as the psycopg2 driver. This project installs psycopg 3.
+        for prefix in ("postgres://", "postgresql://"):
+            if value.startswith(prefix):
+                return "postgresql+psycopg://" + value.removeprefix(prefix)
+        return value
+
     @field_validator("SECRET_KEY")
     @classmethod
     def _secret_key_is_strong(cls, value: str) -> str:

@@ -1,0 +1,35 @@
+# Render Blueprint: the API as a Docker web service on the free plan.
+# The database is NOT here: Render's free Postgres expires after 30 days, so the
+# demo uses a free Neon project and the connection string is pasted in as a secret.
+services:
+  - type: web
+    name: invoice-api
+    runtime: docker
+    plan: free
+    # Pick the Neon region that is closest to this one (Frankfurt: aws-eu-central-1).
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    # Deploy only after the GitHub Actions checks of the commit pass.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      # The demo shows its Swagger UI; the rest of production behaviour stays on.
+      - key: ENABLE_DOCS
+        value: "true"
+      # Render's default is 10000; the image listens on 8000.
+      - key: PORT
+        value: "8000"
+      # A random 256-bit value, generated once by Render.
+      - key: SECRET_KEY
+        generateValue: true
+      # Both are asked for when the Blueprint is created, and never stored in git.
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # A public demo: a lower ceiling than the default 5 USD a day for the whole service.
+      - key: GLOBAL_DAILY_BUDGET_USD
+        value: "2.00"
