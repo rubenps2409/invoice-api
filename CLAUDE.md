@@ -97,7 +97,12 @@ to use `tests/` and exclude tests marked `eval` by default.
 Use the repository's existing `uv` commands. Typical checks are:
 
 -   `uv run pytest`
--   `uv run ruff check .`
+-   `uv run ruff check .` and `uv run ruff format --check .`
+
+`.github/workflows/ci.yml` runs these on every pull request and push to `main`,
+plus `alembic upgrade head` / `alembic check` and a `docker compose up` smoke
+test. It needs only `DATABASE_URL` and `SECRET_KEY` (no `.env`, no Anthropic key);
+keep it that way, and never add the paid eval to it.
 
 Confirm commands against the current configuration and run the relevant
 checks after changes. Do not claim a check passed unless it was actually
