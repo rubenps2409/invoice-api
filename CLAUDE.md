@@ -203,6 +203,8 @@ against official sources before implementing them.
     assistant.
 -   Do not mark work as complete merely because code was written; use
     relevant tests and checks to verify it.
+-   Do not add comments in code with every minor change. Only when truly
+    justified and necessary for understanding.
 
 ## 9. Current project status and planned scope
 

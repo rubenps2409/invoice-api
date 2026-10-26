@@ -26,6 +26,7 @@ CASE = EvalCase(
     text="text",
     expected={
         "supplier_name": "Acme S.L.",
+        "supplier_tax_id": "B12345678",
         "invoice_number": "A-1",
         "issue_date": "2026-03-15",
         "base_amount": "100.00",
@@ -50,6 +51,29 @@ def test_a_perfect_extraction_scores_every_field():
 
     assert score.correct
     assert score.field_results == dict.fromkeys(FIELDS, True)
+
+
+@pytest.mark.parametrize("wrong", [None, "A98765432"], ids=["missing", "other-company"])
+def test_a_wrong_or_missing_tax_id_is_reported(wrong):
+    score = score_case(CASE, invoice(supplier_tax_id=wrong))
+
+    assert not score.correct
+    assert [f for f, ok in score.field_results.items() if not ok] == ["supplier_tax_id"]
+    assert score.mismatches == {"supplier_tax_id": ("B12345678", str(wrong))}
+
+
+def test_an_invented_tax_id_is_reported_when_none_was_printed():
+    case = EvalCase(
+        id="c2",
+        description="d",
+        text="t",
+        expected={**(CASE.expected or {}), "supplier_tax_id": None},
+    )
+
+    score = score_case(case, invoice(supplier_tax_id="B12345678"))
+
+    assert not score.correct
+    assert score.mismatches == {"supplier_tax_id": ("None", "B12345678")}
 
 
 def test_each_wrong_field_is_reported():
@@ -148,7 +172,9 @@ def test_summary_computes_field_invoice_and_refusal_accuracy():
     assert summary.refusal_accuracy == 0.5
     assert summary.field_accuracy["category_name"] == 0.5
     assert summary.field_accuracy["total_amount"] == 1.0
-    assert summary.overall_field_accuracy == pytest.approx(13 / 14)
+    # Two invoices, one wrong field among all of them.
+    total_fields = 2 * len(FIELDS)
+    assert summary.overall_field_accuracy == pytest.approx((total_fields - 1) / total_fields)
 
 
 def test_summary_without_refusal_cases_has_no_refusal_accuracy():

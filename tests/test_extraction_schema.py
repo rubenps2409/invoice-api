@@ -42,6 +42,25 @@ def test_json_numbers_are_accepted_as_amounts():
     assert invoice.base_amount + invoice.tax_amount == invoice.total_amount
 
 
+def test_tax_id_is_normalised():
+    assert make(supplier_tax_id="ES-b12.345.678").supplier_tax_id == "B12345678"
+
+
+def test_tax_id_may_be_missing_or_null():
+    assert make().supplier_tax_id is None
+    assert make(supplier_tax_id=None).supplier_tax_id is None
+
+
+@pytest.mark.parametrize(
+    "value", ["", "N/A", "not printed", "B1", 12345678, 1.5, True, [], {}]
+)
+def test_an_unusable_tax_id_is_dropped_instead_of_rejecting_the_invoice(value):
+    invoice = make(supplier_tax_id=value)
+
+    assert invoice.supplier_tax_id is None
+    assert invoice.supplier_name == "Acme S.L."
+
+
 def test_category_may_be_missing():
     payload = {k: v for k, v in VALID.items() if k != "category_name"}
 

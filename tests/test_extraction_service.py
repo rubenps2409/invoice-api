@@ -11,6 +11,7 @@ from invoice_api.schemas.extraction import ExtractedInvoice
 from invoice_api.services import extraction
 from invoice_api.services.extraction import (
     FEW_SHOT_EXAMPLES,
+    SYSTEM_PROMPT,
     ExtractionInvalidOutput,
     ExtractionNotConfigured,
     ExtractionTimeout,
@@ -94,6 +95,37 @@ def test_valid_answer_returns_invoice_and_records_tokens():
         56,
     )
     assert attempt.latency_ms >= 0
+
+
+def test_the_suppliers_tax_id_is_read_and_normalised():
+    client = FakeClient(reply({**VALID, "supplier_tax_id": "ES-B12.345.678"}))
+
+    result = make_extractor(client).extract("some invoice", ["Software"])
+
+    assert result.invoice.supplier_tax_id == "B12345678"
+
+
+def test_an_answer_without_tax_id_is_still_valid_and_is_not_retried():
+    client = FakeClient(reply(VALID))
+
+    result = make_extractor(client).extract("some invoice", ["Software"])
+
+    assert result.invoice.supplier_tax_id is None
+    assert len(client.calls) == 1
+
+
+def test_the_prompt_asks_for_the_issuers_tax_id_not_the_customers():
+    assert '"supplier_tax_id"' in SYSTEM_PROMPT
+    assert "ISSUED" in SYSTEM_PROMPT
+    assert "Never the customer's" in SYSTEM_PROMPT
+
+
+def test_the_few_shot_examples_show_a_customer_tax_id_that_is_not_extracted():
+    text, expected = FEW_SHOT_EXAMPLES[0][1], FEW_SHOT_EXAMPLES[0][2]
+
+    assert expected["supplier_tax_id"] == "B12345678"
+    assert "B87654321" in text
+    assert "B87654321" not in json.dumps(expected)
 
 
 def test_call_parameters_and_wrapping_of_the_text():

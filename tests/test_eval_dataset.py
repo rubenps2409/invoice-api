@@ -1,5 +1,6 @@
 """Guards the eval dataset itself, so a typo in a case cannot hide a regression."""
 
+import re
 from collections import Counter
 from decimal import Decimal
 
@@ -8,6 +9,8 @@ import pytest
 from evals.cases import CASES, CATEGORIES
 from invoice_api.schemas.extraction import ExtractedInvoice
 from invoice_api.services.extraction import FEW_SHOT_EXAMPLES, SYSTEM_PROMPT
+
+NIF_SHAPED = re.compile(r"\b[A-Z]\d{8}\b|\b\d{8}[A-Z]\b")
 
 EXTRACTION_CASES = [c for c in CASES if c.expected is not None]
 REFUSAL_CASES = [c for c in CASES if c.expected is None]
@@ -47,6 +50,43 @@ def test_expected_values_appear_in_the_text_of_each_case():
     for case in EXTRACTION_CASES:
         assert case.expected is not None
         assert case.expected["invoice_number"] in case.text, case.id
+
+
+def _without_separators(text: str) -> str:
+    return re.sub(r"[\s.\-/]", "", text).upper()
+
+
+def test_every_extraction_case_states_its_expected_tax_id():
+    for case in EXTRACTION_CASES:
+        assert case.expected is not None
+        assert "supplier_tax_id" in case.expected, case.id
+
+
+def test_an_expected_tax_id_is_printed_in_the_text_and_none_is_expected_otherwise():
+    for case in EXTRACTION_CASES:
+        assert case.expected is not None
+        tax_id = case.expected["supplier_tax_id"]
+        if tax_id is None:
+            # A case that expects no tax id must not print anything shaped like one.
+            assert not NIF_SHAPED.search(case.text), case.id
+        else:
+            assert tax_id in _without_separators(case.text), case.id
+
+
+def test_some_cases_have_a_tax_id_and_some_do_not():
+    expected = [c.expected for c in EXTRACTION_CASES if c.expected]
+
+    assert any(e["supplier_tax_id"] for e in expected)
+    assert any(e["supplier_tax_id"] is None for e in expected)
+
+
+def test_a_case_tests_that_the_customers_tax_id_is_not_taken():
+    case = next(c for c in EXTRACTION_CASES if c.id == "customer_tax_id_is_not_the_suppliers")
+
+    assert case.expected is not None
+    printed = set(NIF_SHAPED.findall(case.text))
+    # The text really contains another tax id to be confused with.
+    assert printed - {case.expected["supplier_tax_id"]}
 
 
 def test_some_cases_expect_no_category_and_some_expect_negative_amounts():

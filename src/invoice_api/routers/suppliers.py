@@ -5,12 +5,17 @@ from invoice_api.constants import DEFAULT_PAGE_SIZE
 from invoice_api.db_helpers import commit_or_conflict
 from invoice_api.dependencies import CurrentUserId, DbSession, IdPath, Limit, Skip
 from invoice_api.models import Supplier
+from invoice_api.models.supplier import TAX_ID_UNIQUE
 from invoice_api.schemas.supplier import SupplierCreate, SupplierRead, SupplierUpdate
 
 router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 
 _DUPLICATE = "A supplier with this name already exists"
+_DUPLICATE_TAX_ID = "A supplier with this tax id already exists"
 _IN_USE = "Supplier is used by invoices and cannot be deleted"
+
+# Suppliers have two unique constraints; each one gets its own message.
+_UNIQUE_DETAILS = {TAX_ID_UNIQUE: _DUPLICATE_TAX_ID}
 
 
 def _get_owned_supplier(db: DbSession, supplier_id: int, user_id: int) -> Supplier:
@@ -27,7 +32,7 @@ def _get_owned_supplier(db: DbSession, supplier_id: int, user_id: int) -> Suppli
 def create_supplier(data: SupplierCreate, db: DbSession, user_id: CurrentUserId):
     supplier = Supplier(**data.model_dump(), user_id=user_id)
     db.add(supplier)
-    commit_or_conflict(db, unique_detail=_DUPLICATE)
+    commit_or_conflict(db, unique_detail=_DUPLICATE, unique_details=_UNIQUE_DETAILS)
     return supplier
 
 
@@ -59,7 +64,10 @@ def update_supplier(
 ):
     supplier = _get_owned_supplier(db, supplier_id, user_id)
     supplier.name = data.name
-    commit_or_conflict(db, unique_detail=_DUPLICATE)
+    # Omitted means "leave as is"; an explicit null clears it.
+    if "tax_id" in data.model_fields_set:
+        supplier.tax_id = data.tax_id
+    commit_or_conflict(db, unique_detail=_DUPLICATE, unique_details=_UNIQUE_DETAILS)
     return supplier
 
 

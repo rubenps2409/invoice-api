@@ -43,6 +43,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Hidroeléctrica del Ebro S.A.",
+            "supplier_tax_id": "A98765432",
             "invoice_number": "2026-EL-00412",
             "issue_date": "2026-02-05",
             "base_amount": "118.40",
@@ -65,6 +66,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Nubesoft Cloud Ltd.",
+            "supplier_tax_id": None,
             "invoice_number": "INV-88213",
             "issue_date": "2026-03-01",
             "base_amount": "480.00",
@@ -87,6 +89,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Agencia Faro Creativa S.L.",
+            "supplier_tax_id": None,
             "invoice_number": "2026/0097",
             "issue_date": "2026-03-12",
             "base_amount": "2400.00",
@@ -108,6 +111,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Viajes Horizonte Azul S.A.",
+            "supplier_tax_id": None,
             "invoice_number": "F-2026-3310",
             "issue_date": "2026-04-22",
             "base_amount": "170.00",
@@ -131,6 +135,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Papelería El Cuaderno S.L.",
+            "supplier_tax_id": None,
             "invoice_number": "R-2026-004",
             "issue_date": "2026-05-03",
             "base_amount": "-45.00",
@@ -153,6 +158,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Gestoría Almendral y Asociados",
+            "supplier_tax_id": None,
             "invoice_number": "2026-0211",
             "issue_date": "2026-06-30",
             "base_amount": "300.00",
@@ -181,6 +187,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Telefonía Costa Verde S.A.",
+            "supplier_tax_id": "A03123456",
             "invoice_number": "TCV-2026-118204",
             "issue_date": "2026-07-01",
             "base_amount": "34.71",
@@ -203,6 +210,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Orbit Hosting Inc.",
+            "supplier_tax_id": None,
             "invoice_number": "OH-55012",
             "issue_date": "2026-08-14",
             "base_amount": "120.00",
@@ -225,6 +233,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Gimnasio Fuerza Norte S.L.",
+            "supplier_tax_id": None,
             "invoice_number": "GFN-2026-0891",
             "issue_date": "2026-09-25",
             "base_amount": "49.59",
@@ -247,6 +256,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Papelería El Cuaderno S.L.",
+            "supplier_tax_id": None,
             "invoice_number": "2026-0388",
             "issue_date": "2026-09-11",
             "base_amount": "80.00",
@@ -270,6 +280,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Suministros de Oficina Levante S.L.",
+            "supplier_tax_id": None,
             "invoice_number": "F26-00931",
             "issue_date": "2026-09-17",
             "base_amount": "1250.00",
@@ -292,6 +303,7 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Cafetería Los Olivos",
+            "supplier_tax_id": None,
             "invoice_number": "2026-1044",
             "issue_date": "2026-10-08",
             "base_amount": "72.73",
@@ -313,12 +325,61 @@ CASES: tuple[EvalCase, ...] = (
         ),
         expected={
             "supplier_name": "Agencia Faro Creativa S.L.",
+            "supplier_tax_id": None,
             "invoice_number": "2026/0310",
             "issue_date": "2026-10-27",
             "base_amount": "84250.00",
             "tax_amount": "17692.50",
             "total_amount": "101942.50",
             "category_name": "Marketing",
+        },
+    ),
+    EvalCase(
+        id="customer_tax_id_is_not_the_suppliers",
+        description="Two tax ids in the text: only the issuer's is the supplier's",
+        text=(
+            "Consultora Delta Norte S.L.\n"
+            "NIF: B45678912\n"
+            "Factura: CD-2026-0156\n"
+            "Fecha: 14/10/2026\n"
+            "Cliente: Estudio Ámbar S.L. - NIF B91234567\n"
+            "Consultoría de organización (20 h)\n"
+            "Base imponible: 600,00 €\n"
+            "IVA 21%: 126,00 €\n"
+            "Total: 726,00 €"
+        ),
+        expected={
+            "supplier_name": "Consultora Delta Norte S.L.",
+            "supplier_tax_id": "B45678912",
+            "invoice_number": "CD-2026-0156",
+            "issue_date": "2026-10-14",
+            "base_amount": "600.00",
+            "tax_amount": "126.00",
+            "total_amount": "726.00",
+            "category_name": "Professional services",
+        },
+    ),
+    EvalCase(
+        id="tax_id_with_prefix_and_separators",
+        description="VAT number printed as ES-B65.432.109: must come out normalised",
+        text=(
+            "Soluciones Mediterráneo S.L. (NIF ES-B65.432.109)\n"
+            "Factura nº SM/2026/0042\n"
+            "Fecha: 19/10/2026\n"
+            "Licencia anual de software de gestión\n"
+            "Base imponible: 250,00 €\n"
+            "IVA 21%: 52,50 €\n"
+            "Total: 302,50 €"
+        ),
+        expected={
+            "supplier_name": "Soluciones Mediterráneo S.L.",
+            "supplier_tax_id": "B65432109",
+            "invoice_number": "SM/2026/0042",
+            "issue_date": "2026-10-19",
+            "base_amount": "250.00",
+            "tax_amount": "52.50",
+            "total_amount": "302.50",
+            "category_name": "Software and licenses",
         },
     ),
     EvalCase(

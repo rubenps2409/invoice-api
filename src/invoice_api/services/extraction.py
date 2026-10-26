@@ -32,6 +32,9 @@ You extract structured data from the text of a single invoice.
 Reply with ONE JSON object and nothing else: no markdown, no comments.
 Keys (exactly these):
 - "supplier_name": string, the company that issued the invoice.
+- "supplier_tax_id": string or null, the tax ID (NIF, CIF or VAT number) of the
+  company that ISSUED the invoice, as printed. Never the customer's tax ID. Use
+  null if the issuer's tax ID is not printed.
 - "invoice_number": string, exactly as printed.
 - "issue_date": string, YYYY-MM-DD.
 - "base_amount": number, the amount before tax.
@@ -58,6 +61,7 @@ FEW_SHOT_EXAMPLES: list[tuple[list[str], str, dict]] = [
         (
             "FACTURA Nº: A-2026/0153\n"
             "Electra Norte Energía S.L. - CIF B12345678\n"
+            "Cliente: Distribuciones Sol S.L. - CIF B87654321\n"
             "Fecha de emisión: 03/02/2026\n"
             "Concepto: Suministro eléctrico enero 2026\n"
             "Base imponible: 84,30 €\n"
@@ -66,6 +70,7 @@ FEW_SHOT_EXAMPLES: list[tuple[list[str], str, dict]] = [
         ),
         {
             "supplier_name": "Electra Norte Energía S.L.",
+            "supplier_tax_id": "B12345678",
             "invoice_number": "A-2026/0153",
             "issue_date": "2026-02-03",
             "base_amount": 84.3,
@@ -87,6 +92,7 @@ FEW_SHOT_EXAMPLES: list[tuple[list[str], str, dict]] = [
         ),
         {
             "supplier_name": "Brújula Studio",
+            "supplier_tax_id": None,
             "invoice_number": "2026-0007",
             "issue_date": "2026-03-09",
             "base_amount": 1200.0,

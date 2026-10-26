@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import cast
 
 import pytest
@@ -36,6 +37,33 @@ def test_unique_violation_becomes_409_and_rolls_back():
 
     assert exc.value.status_code == 409
     assert exc.value.detail == "duplicate"
+    assert session.rolled_back
+
+
+def unique_violation_of(constraint: str) -> UniqueViolation:
+    class Named(UniqueViolation):
+        diag = SimpleNamespace(constraint_name=constraint)  # type: ignore[assignment]
+
+    return Named("dup")
+
+
+@pytest.mark.parametrize(
+    ("violated", "expected"),
+    [("uq_tax", "tax id taken"), ("uq_other", "duplicate"), ("", "duplicate")],
+    ids=["mapped-constraint", "unmapped-constraint", "unknown-constraint"],
+)
+def test_each_unique_constraint_can_have_its_own_message(violated, expected):
+    session = FailingSession(unique_violation_of(violated))
+
+    with pytest.raises(HTTPException) as exc:
+        commit_or_conflict(
+            _as_session(session),
+            unique_detail="duplicate",
+            unique_details={"uq_tax": "tax id taken"},
+        )
+
+    assert exc.value.status_code == 409
+    assert exc.value.detail == expected
     assert session.rolled_back
 
 

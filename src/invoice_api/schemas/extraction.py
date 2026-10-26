@@ -3,6 +3,7 @@ from typing import Annotated, Self
 
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     StringConstraints,
     field_validator,
@@ -10,8 +11,18 @@ from pydantic import (
 )
 
 from invoice_api.config import settings
+from invoice_api.normalization import normalize_tax_id
 from invoice_api.schemas.common import Money, Str100, Str255
 from invoice_api.schemas.invoice import check_totals
+
+
+def _tax_id_or_none(value: object) -> str | None:
+    return normalize_tax_id(value) if isinstance(value, str) else None
+
+
+# The tax id only helps to recognise the supplier, so a malformed one is dropped
+# (the supplier is then matched by name) instead of rejecting the whole invoice.
+OptionalTaxId = Annotated[str | None, BeforeValidator(_tax_id_or_none)]
 
 
 class ExtractedInvoice(BaseModel):
@@ -22,6 +33,7 @@ class ExtractedInvoice(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     supplier_name: Str255
+    supplier_tax_id: OptionalTaxId = None
     invoice_number: Str100
     issue_date: date
     base_amount: Money

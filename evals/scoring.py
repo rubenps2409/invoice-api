@@ -8,6 +8,7 @@ from invoice_api.services.extraction import ExtractionError, ExtractionInvalidOu
 
 FIELDS = (
     "supplier_name",
+    "supplier_tax_id",
     "invoice_number",
     "issue_date",
     "base_amount",

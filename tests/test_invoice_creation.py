@@ -112,10 +112,10 @@ def test_recovers_when_the_supplier_is_created_concurrently(db, user, monkeypatc
     real_find = invoice_creation._find_supplier
     calls = []
 
-    def find_after_a_lost_race(db_, user_id, name):
+    def find_after_a_lost_race(db_, user_id, name, tax_id):
         calls.append(name)
         # First lookup "misses" (the other request had not committed yet).
-        return None if len(calls) == 1 else real_find(db_, user_id, name)
+        return None if len(calls) == 1 else real_find(db_, user_id, name, tax_id)
 
     monkeypatch.setattr(invoice_creation, "_find_supplier", find_after_a_lost_race)
 
@@ -124,6 +124,172 @@ def test_recovers_when_the_supplier_is_created_concurrently(db, user, monkeypatc
     assert invoice.supplier_id == existing.id
     assert count(db, Supplier) == 1
     assert len(calls) == 2
+
+
+# --- recognising the same supplier ------------------------------------------
+
+
+def add_supplier(db, user, name, tax_id=None) -> Supplier:
+    supplier = Supplier(name=name, tax_id=tax_id, user_id=user.id)
+    db.add(supplier)
+    db.commit()
+    return supplier
+
+
+@pytest.mark.parametrize("variant", ["ACME, S.L.", "Acme SL", "acme s.l.u.", "Acmé"])
+def test_a_spelling_variant_of_the_name_reuses_the_supplier(db, user, variant):
+    first = create_invoice_from_extraction(db, user.id, extracted())
+
+    second = create_invoice_from_extraction(
+        db, user.id, extracted(supplier_name=variant, invoice_number="INV-2")
+    )
+
+    assert second.supplier_id == first.supplier_id
+    assert count(db, Supplier) == 1
+
+
+def test_a_name_variant_cannot_hide_a_duplicate_invoice(db, user):
+    """The original bug: "ACME, S.L." used to create a second supplier, so the
+    (user, supplier, number) uniqueness never saw the repeated invoice."""
+    create_invoice_from_extraction(db, user.id, extracted())
+
+    with pytest.raises(DuplicateInvoiceError):
+        create_invoice_from_extraction(db, user.id, extracted(supplier_name="ACME, S.L."))
+
+    assert count(db, Invoice) == 1
+    assert count(db, Supplier) == 1
+
+
+def test_the_tax_id_is_stored_normalised(db, user):
+    invoice = create_invoice_from_extraction(
+        db, user.id, extracted(supplier_tax_id="ES-B12.345.678")
+    )
+
+    supplier = db.get(Supplier, invoice.supplier_id)
+    assert supplier is not None
+    assert supplier.tax_id == "B12345678"
+
+
+def test_the_same_tax_id_reuses_the_supplier_even_if_the_name_differs(db, user):
+    first = create_invoice_from_extraction(db, user.id, extracted(supplier_tax_id="B12345678"))
+
+    second = create_invoice_from_extraction(
+        db,
+        user.id,
+        extracted(
+            supplier_name="Acme Soluciones Integrales",
+            supplier_tax_id="b-12345678",
+            invoice_number="INV-2",
+        ),
+    )
+
+    assert second.supplier_id == first.supplier_id
+    assert count(db, Supplier) == 1
+
+
+def test_a_supplier_known_only_by_name_learns_its_tax_id(db, user):
+    existing = add_supplier(db, user, "Acme S.L.")
+
+    invoice = create_invoice_from_extraction(
+        db, user.id, extracted(supplier_tax_id="B12345678")
+    )
+
+    assert invoice.supplier_id == existing.id
+    assert existing.tax_id == "B12345678"
+    assert count(db, Supplier) == 1
+
+
+def test_an_invoice_without_tax_id_reuses_a_supplier_that_has_one(db, user):
+    existing = add_supplier(db, user, "Acme S.L.", tax_id="B12345678")
+
+    invoice = create_invoice_from_extraction(db, user.id, extracted(supplier_tax_id=None))
+
+    assert invoice.supplier_id == existing.id
+    assert existing.tax_id == "B12345678"
+
+
+def test_the_same_name_with_a_different_tax_id_is_another_company(db, user):
+    first = add_supplier(db, user, "Acme S.L.", tax_id="B12345678")
+
+    invoice = create_invoice_from_extraction(
+        db, user.id, extracted(supplier_name="ACME, S.L.", supplier_tax_id="A98765432")
+    )
+
+    assert invoice.supplier_id != first.id
+    assert count(db, Supplier) == 2
+
+
+def test_two_companies_with_exactly_the_same_name_can_both_be_stored(db, user):
+    """Names are unique per user, so the second one gets its tax id appended."""
+    first = add_supplier(db, user, "Acme S.L.", tax_id="B12345678")
+
+    invoice = create_invoice_from_extraction(
+        db, user.id, extracted(supplier_tax_id="A98765432")
+    )
+
+    second = db.get(Supplier, invoice.supplier_id)
+    assert second is not None
+    assert second.id != first.id
+    assert second.name == "Acme S.L. (A98765432)"
+    assert second.tax_id == "A98765432"
+
+
+def test_a_very_long_name_still_fits_when_the_tax_id_is_appended(db, user):
+    long_name = "A" * 255
+    add_supplier(db, user, long_name, tax_id="B12345678")
+
+    invoice = create_invoice_from_extraction(
+        db, user.id, extracted(supplier_name=long_name, supplier_tax_id="A98765432")
+    )
+
+    second = db.get(Supplier, invoice.supplier_id)
+    assert second is not None
+    assert len(second.name) == 255
+    assert second.name.endswith(" (A98765432)")
+
+
+def test_the_same_tax_id_for_another_user_is_a_separate_supplier(db, user, other_user):
+    mine = create_invoice_from_extraction(db, user.id, extracted(supplier_tax_id="B12345678"))
+
+    theirs = create_invoice_from_extraction(
+        db, other_user.id, extracted(supplier_tax_id="B12345678")
+    )
+
+    assert theirs.supplier_id != mine.supplier_id
+    assert count(db, Supplier) == 2
+
+
+def test_a_tax_id_lost_race_reuses_the_supplier_that_won(db, user, monkeypatch):
+    """The supplier known by name is about to learn a tax id that a concurrent
+    request already gave to another supplier."""
+    by_name = add_supplier(db, user, "Acme S.L.")
+    winner = add_supplier(db, user, "Acme Soluciones", tax_id="B12345678")
+    real_find = invoice_creation._find_supplier
+    calls = []
+
+    def stale_first_lookup(db_, user_id, name, tax_id):
+        calls.append(tax_id)
+        return by_name if len(calls) == 1 else real_find(db_, user_id, name, tax_id)
+
+    monkeypatch.setattr(invoice_creation, "_find_supplier", stale_first_lookup)
+
+    invoice = create_invoice_from_extraction(
+        db, user.id, extracted(supplier_tax_id="B12345678")
+    )
+
+    assert invoice.supplier_id == winner.id
+    assert by_name.tax_id is None
+
+
+def test_an_integrity_error_that_is_not_a_lost_race_is_not_swallowed(db, user, monkeypatch):
+    by_name = add_supplier(db, user, "Acme S.L.")
+    add_supplier(db, user, "Other", tax_id="B12345678")
+    # The lookup keeps answering with the same supplier, so there is no "winner"
+    # to fall back on: the conflict must surface instead of being hidden.
+    monkeypatch.setattr(invoice_creation, "_find_supplier", lambda *args: by_name)
+
+    with pytest.raises(IntegrityError):
+        create_invoice_from_extraction(db, user.id, extracted(supplier_tax_id="B12345678"))
 
 
 def test_unrelated_integrity_errors_are_not_swallowed(db):

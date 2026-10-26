@@ -138,6 +138,68 @@ def test_no_transaction_is_held_open_while_the_model_runs(
     assert in_transaction_during_call == [False]
 
 
+def test_the_suppliers_tax_id_is_stored_and_listed(client, headers_a, use_extractor):
+    use_extractor(succeed(supplier_tax_id="ES-B12.345.678"))
+
+    post(client, headers_a)
+
+    (supplier,) = client.get("/api/suppliers", headers=headers_a).json()
+    assert supplier["name"] == "Acme S.L."
+    assert supplier["tax_id"] == "B12345678"
+
+
+def test_a_supplier_created_by_hand_with_a_tax_id_is_recognised_by_it(
+    client, headers_a, use_extractor
+):
+    supplier = client.post(
+        "/api/suppliers",
+        json={"name": "Acme Soluciones Integrales", "tax_id": "B12345678"},
+        headers=headers_a,
+    ).json()
+    use_extractor(succeed(supplier_name="ACME", supplier_tax_id="B12345678"))
+
+    invoice = post(client, headers_a).json()
+
+    assert invoice["supplier_id"] == supplier["id"]
+    assert len(client.get("/api/suppliers", headers=headers_a).json()) == 1
+
+
+def test_a_wrongly_learned_tax_id_can_be_corrected_through_the_api(
+    client, headers_a, use_extractor
+):
+    # The model takes the customer's tax id for the supplier's.
+    use_extractor(succeed(supplier_tax_id="B87654321"))
+    first = post(client, headers_a).json()
+    (supplier,) = client.get("/api/suppliers", headers=headers_a).json()
+    assert supplier["tax_id"] == "B87654321"
+
+    fixed = client.put(
+        f"/api/suppliers/{supplier['id']}",
+        json={"name": supplier["name"], "tax_id": "B12345678"},
+        headers=headers_a,
+    )
+    use_extractor(succeed(supplier_tax_id="B12345678", invoice_number="A-2"))
+    second = post(client, headers_a).json()
+
+    assert fixed.status_code == 200
+    assert second["supplier_id"] == first["supplier_id"]
+    assert len(client.get("/api/suppliers", headers=headers_a).json()) == 1
+
+
+def test_a_name_variant_of_a_known_supplier_is_a_duplicate_invoice(
+    client, headers_a, use_extractor
+):
+    use_extractor(succeed())
+    assert post(client, headers_a).status_code == 201
+    use_extractor(succeed(supplier_name="ACME, S.L."))
+
+    response = post(client, headers_a)
+
+    assert response.status_code == 409
+    assert len(client.get("/api/suppliers", headers=headers_a).json()) == 1
+    assert len(client.get("/api/invoices", headers=headers_a).json()) == 1
+
+
 def test_a_matching_category_is_linked(client, headers_a, make_category, use_extractor):
     category = make_category(headers_a, name="Software")
     use_extractor(succeed(category_name="Software"))
