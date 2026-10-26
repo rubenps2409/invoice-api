@@ -35,7 +35,13 @@ The project uses a `src` layout:
 -   `src/invoice_api/services/`: business logic, LLM extraction, invoice
     creation and LLM usage/cost recording.
 -   `src/invoice_api/security.py` and `dependencies.py`: token/password
-    security and shared request dependencies.
+    security and shared request dependencies. The app is async end to end
+    (`AsyncSession`, `AsyncAnthropic`): endpoints, dependencies and services are
+    `async def`, and CPU-heavy work such as Argon2 goes through
+    `hash_password_async` / `verify_password_async` (a thread), never on the
+    event loop. Alembic stays synchronous.
+-   `src/invoice_api/services/concurrency.py`: cap on model calls in flight per
+    process (`LLM_MAX_CONCURRENT_CALLS`); past it extraction answers 503.
 -   `src/invoice_api/config.py`: Pydantic Settings configuration loaded
     from `.env`.
 -   `migrations/` and `alembic.ini`: Alembic migrations.
@@ -73,10 +79,11 @@ Constants and literals:
 
 The repository currently specifies: - Python `>=3.13` - `uv` for
 project/dependency management - FastAPI - Pydantic and Pydantic
-Settings - SQLAlchemy 2.x - PostgreSQL with the `psycopg` driver -
+Settings - SQLAlchemy 2.x (asyncio extension) - PostgreSQL with the
+`psycopg` driver (sync for Alembic, async for the app) -
 Alembic - Anthropic Python SDK - `pwdlib[argon2]` for password hashing -
-PyJWT for JWT handling - pytest, pytest-cov and Ruff for development
-checks
+PyJWT for JWT handling - pytest, pytest-asyncio, pytest-cov and Ruff for
+development checks
 
 Check `pyproject.toml`, `uv.lock` and the existing code before changing
 dependencies or assuming exact installed versions. Do not replace
@@ -100,6 +107,15 @@ run.
 
 -   Use the existing SQLAlchemy session dependency and FastAPI
     dependency injection.
+-   The session is an `AsyncSession`: every database call is awaited, and an
+    attribute that is not loaded cannot be fetched implicitly (it raises
+    `MissingGreenlet`). Relationships use `lazy="raise"`. After a rollback every
+    loaded object is expired: read the ids or fields you still need *before* the
+    operation that may roll back.
+-   psycopg cannot run async on Windows' default `ProactorEventLoop`. On Windows
+    start the server with `--loop asyncio:SelectorEventLoop` (`fastapi dev` and
+    `--reload` already do); Linux needs nothing. The tests and `scripts/` select
+    it themselves.
 -   Use Alembic migrations for schema changes. Do not introduce
     `create_all()` as a production schema-management mechanism.
 -   Preserve the existing transaction boundaries and explicitly handle
@@ -180,7 +196,9 @@ The extraction service is in `src/invoice_api/services/extraction.py`.
 It calls Anthropic through the SDK, parses a JSON object, validates it
 against `ExtractedInvoice`, and returns extraction-attempt metadata.
 Keep provider-specific behavior in the service rather than coupling it
-to HTTP handlers or SQLAlchemy models.
+to HTTP handlers or SQLAlchemy models. The model call is awaited without
+holding a database connection (the endpoint rolls back first) and inside an
+`InFlightLimit` slot, so a slow provider cannot pile up unbounded calls.
 
 Current design choices visible in the code: - A system prompt requests a
 single JSON object with a fixed field contract. - The prompt treats
@@ -227,7 +245,12 @@ against official sources before implementing them.
 -   For protected resources, test unauthenticated access and cross-user
     isolation.
 -   Use isolated test database fixtures and dependency overrides already
-    defined in `tests/conftest.py`.
+    defined in `tests/conftest.py`. Tests are `async def` (pytest-asyncio in
+    `auto` mode, one event loop for the whole session) and use `httpx.AsyncClient`;
+    `make_client(ip)` builds a second client with another IP. Do not share one
+    `db` session between concurrent requests.
+-   `scripts/load_extraction.py` load-tests the extraction endpoint with a fake
+    slow model (no API cost, test database only).
 -   Mock external LLM calls in normal tests so the suite is
     deterministic and does not incur API charges.
 -   The project has a separate `evals/` package for LLM quality. Inspect
