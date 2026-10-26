@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     LLM_TIMEOUT_SECONDS: float = 30.0
     LLM_MAX_RETRIES: int = 2
     LLM_MAX_OUTPUT_TOKENS: int = 1024
+    # Model calls in flight at once, per process. Past it, extraction answers 503.
+    LLM_MAX_CONCURRENT_CALLS: int = Field(20, ge=1)
     MAX_INVOICE_TEXT_CHARS: int = 20_000
     LLM_INPUT_PRICE_PER_MTOK: Decimal = Decimal("0.10")
     LLM_OUTPUT_PRICE_PER_MTOK: Decimal = Decimal("0.50")

@@ -13,9 +13,9 @@ _DUPLICATE = "A category with this name already exists"
 _IN_USE = "Category is used by invoices and cannot be deleted"
 
 
-def _get_owned_category(db: DbSession, category_id: int, user_id: int) -> Category:
+async def _get_owned_category(db: DbSession, category_id: int, user_id: int) -> Category:
     """Return 404 for missing and foreign records alike, so existence isn't leaked."""
-    category = db.scalar(
+    category = await db.scalar(
         select(Category).where(Category.id == category_id, Category.user_id == user_id)
     )
     if category is None:
@@ -24,15 +24,15 @@ def _get_owned_category(db: DbSession, category_id: int, user_id: int) -> Catego
 
 
 @router.post("", response_model=CategoryRead, status_code=status.HTTP_201_CREATED)
-def create_category(data: CategoryCreate, db: DbSession, user_id: CurrentUserId):
+async def create_category(data: CategoryCreate, db: DbSession, user_id: CurrentUserId):
     category = Category(**data.model_dump(), user_id=user_id)
     db.add(category)
-    commit_or_conflict(db, unique_detail=_DUPLICATE)
+    await commit_or_conflict(db, unique_detail=_DUPLICATE)
     return category
 
 
 @router.get("", response_model=list[CategoryRead])
-def list_categories(
+async def list_categories(
     db: DbSession,
     user_id: CurrentUserId,
     skip: Skip = 0,
@@ -45,27 +45,27 @@ def list_categories(
         .offset(skip)
         .limit(limit)
     )
-    return db.scalars(stmt).all()
+    return (await db.scalars(stmt)).all()
 
 
 @router.get("/{category_id}", response_model=CategoryRead)
-def get_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId):
-    return _get_owned_category(db, category_id, user_id)
+async def get_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId):
+    return await _get_owned_category(db, category_id, user_id)
 
 
 @router.put("/{category_id}", response_model=CategoryRead)
-def update_category(
+async def update_category(
     category_id: IdPath, data: CategoryUpdate, db: DbSession, user_id: CurrentUserId
 ):
-    category = _get_owned_category(db, category_id, user_id)
+    category = await _get_owned_category(db, category_id, user_id)
     category.name = data.name
-    commit_or_conflict(db, unique_detail=_DUPLICATE)
+    await commit_or_conflict(db, unique_detail=_DUPLICATE)
     return category
 
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId):
-    category = _get_owned_category(db, category_id, user_id)
-    db.delete(category)
-    commit_or_conflict(db, unique_detail=_IN_USE, fk_detail=_IN_USE)
+async def delete_category(category_id: IdPath, db: DbSession, user_id: CurrentUserId):
+    category = await _get_owned_category(db, category_id, user_id)
+    await db.delete(category)
+    await commit_or_conflict(db, unique_detail=_IN_USE, fk_detail=_IN_USE)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

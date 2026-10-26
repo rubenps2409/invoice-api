@@ -11,9 +11,9 @@ router = APIRouter(prefix="/usage", tags=["usage"])
 
 
 @router.get("", response_model=UsageRead)
-def read_usage(db: DbSession, user_id: CurrentUserId):
+async def read_usage(db: DbSession, user_id: CurrentUserId):
     """How much of today's extraction budget the user has used."""
-    usage = usage_today(db, user_id)
+    usage = await usage_today(db, user_id)
     budget = settings.USER_DAILY_BUDGET_USD
     return UsageRead(
         period_start=usage.period_start,

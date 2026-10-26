@@ -1,6 +1,10 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import APIRouter, FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
+from invoice_api.database import engine
 from invoice_api.routers import (
     auth,
     categories,
@@ -11,13 +15,21 @@ from invoice_api.routers import (
     usage,
     users,
 )
-from invoice_api.services.extraction import ExtractionNotConfigured
+from invoice_api.services.extraction import ExtractionNotConfigured, close_client
 
-app = FastAPI(title="Invoice API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    yield
+    await close_client()
+    await engine.dispose()
+
+
+app = FastAPI(title="Invoice API", lifespan=lifespan)
 
 
 @app.exception_handler(ExtractionNotConfigured)
-def extraction_not_configured(request: Request, exc: ExtractionNotConfigured):
+async def extraction_not_configured(request: Request, exc: ExtractionNotConfigured):
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={"detail": "Invoice extraction is not available"},

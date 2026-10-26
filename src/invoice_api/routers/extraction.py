@@ -8,6 +8,11 @@ from invoice_api.http_helpers import retry_later
 from invoice_api.models import Category
 from invoice_api.schemas.extraction import ExtractionRequest
 from invoice_api.schemas.invoice import InvoiceRead
+from invoice_api.services.concurrency import (
+    InFlightLimit,
+    TooManyInFlight,
+    get_in_flight_limit,
+)
 from invoice_api.services.extraction import (
     ExtractionError,
     ExtractionInvalidOutput,
@@ -28,6 +33,8 @@ router = APIRouter(prefix="/invoices", tags=["invoices"])
 _USER_BUDGET_REACHED = "Daily extraction budget reached"
 # Says nothing about the global budget: it is not the user's business.
 _TEMPORARILY_UNAVAILABLE = "Invoice extraction is temporarily unavailable"
+# Too many model calls in flight: free slots appear within seconds.
+_BUSY_RETRY_AFTER_SECONDS = 5
 
 _ERROR_STATUS: dict[type[ExtractionError], int] = {
     ExtractionInvalidOutput: status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -46,22 +53,23 @@ _ERROR_STATUS: dict[type[ExtractionError], int] = {
         429: {"description": "The user's daily extraction budget is spent (see Retry-After)"},
         502: {"description": "The model API failed"},
         503: {
-            "description": "Extraction is not configured, or the daily budget of the "
-            "whole service is spent (see Retry-After)"
+            "description": "Extraction is not configured, the daily budget of the whole "
+            "service is spent, or too many extractions are running (see Retry-After)"
         },
         504: {"description": "The model took too long to answer"},
     },
 )
-def extract_invoice(
+async def extract_invoice(
     data: ExtractionRequest,
     db: DbSession,
     user_id: CurrentUserId,
     extractor: Annotated[InvoiceExtractor, Depends(get_extractor)],
+    in_flight: Annotated[InFlightLimit, Depends(get_in_flight_limit)],
 ):
     """Extract an invoice from raw text and store it as a pending invoice."""
     # Before anything is spent. The extraction that crosses the limit is served.
     try:
-        check_budget(db, user_id)
+        await check_budget(db, user_id)
     except UsageLimitExceeded as exc:
         if exc.scope == UsageScope.GLOBAL:
             raise retry_later(
@@ -73,24 +81,32 @@ def extract_invoice(
             status.HTTP_429_TOO_MANY_REQUESTS, _USER_BUDGET_REACHED, exc.retry_after_seconds
         ) from exc
 
-    categories = db.scalars(
+    names = await db.scalars(
         select(Category.name).where(Category.user_id == user_id).order_by(Category.name)
-    ).all()
+    )
+    categories = names.all()
 
     # The user lookup and the queries above opened a transaction. End it so the
     # pooled connection is not held while the (slow) model call runs.
-    db.rollback()
+    await db.rollback()
 
     try:
-        result = extractor.extract(data.text, categories)
+        async with in_flight.slot():
+            result = await extractor.extract(data.text, categories)
+    except TooManyInFlight as exc:
+        raise retry_later(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            _TEMPORARILY_UNAVAILABLE,
+            _BUSY_RETRY_AFTER_SECONDS,
+        ) from exc
     except ExtractionError as exc:
         # The tokens were spent even though the extraction failed.
-        record_attempts(db, user_id, exc.attempts, model=extractor.model)
+        await record_attempts(db, user_id, exc.attempts, model=extractor.model)
         raise HTTPException(_ERROR_STATUS[type(exc)], str(exc)) from exc
 
-    record_attempts(db, user_id, result.attempts, model=extractor.model)
+    await record_attempts(db, user_id, result.attempts, model=extractor.model)
 
     try:
-        return create_invoice_from_extraction(db, user_id, result.invoice)
+        return await create_invoice_from_extraction(db, user_id, result.invoice)
     except DuplicateInvoiceError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc

@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime, timedelta
 
 import jwt
@@ -20,6 +21,15 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return password_hash.verify(plain_password, hashed_password)
     except UnknownHashError:
         return False
+
+
+async def hash_password_async(password: str) -> str:
+    """Argon2 is deliberately slow CPU work: off the event loop, in a thread."""
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(plain_password: str, hashed_password: str) -> bool:
+    return await asyncio.to_thread(verify_password, plain_password, hashed_password)
 
 
 def create_access_token(user_id: int) -> str:

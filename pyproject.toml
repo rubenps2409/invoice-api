@@ -15,7 +15,7 @@ dependencies = [
     "pwdlib[argon2]>=0.3.1",
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.15.1",
-    "sqlalchemy>=2.1.4",
+    "sqlalchemy[asyncio]>=2.1.4",
 ]
 
 [build-system]
@@ -30,6 +30,7 @@ dev = [
     "httpx>=0.28.1",
     "httpx2>=2.16.0",
     "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.1",
     "pytest-cov>=7.1.0",
     "ruff>=0.17.0",
 ]
@@ -45,6 +46,10 @@ select = ["E", "F", "W", "I", "UP", "B"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-m 'not eval'"
+asyncio_mode = "auto"
+# One event loop for the whole run, so the session-scoped engine can be shared.
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 markers = [
     "eval: runs the real LLM (needs ANTHROPIC_API_KEY, costs a few cents)",
 ]

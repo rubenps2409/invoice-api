@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from decimal import ROUND_HALF_UP, Decimal
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from invoice_api.config import settings
 from invoice_api.models import LlmCall
@@ -28,8 +28,8 @@ def estimate_cost_usd(
     return cost.quantize(_COST_STEP, rounding=ROUND_HALF_UP)
 
 
-def record_attempts(
-    db: Session,
+async def record_attempts(
+    db: AsyncSession,
     user_id: int,
     attempts: Sequence[Attempt],
     *,
@@ -61,5 +61,5 @@ def record_attempts(
         for attempt in attempts
     ]
     db.add_all(calls)
-    db.commit()
+    await db.commit()
     return calls

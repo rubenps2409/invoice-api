@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Path, Query, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from invoice_api.constants import BEARER_SCHEME, POSTGRES_INT_MAX
 from invoice_api.database import get_db
@@ -13,14 +13,14 @@ _MAX_PAGE_SIZE = 100
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
-DbSession = Annotated[Session, Depends(get_db)]
+DbSession = Annotated[AsyncSession, Depends(get_db)]
 
 AccessToken = Annotated[str, Depends(oauth2_scheme)]
 
 
-def get_current_user(token: AccessToken, db: DbSession) -> User:
+async def get_current_user(token: AccessToken, db: DbSession) -> User:
     user_id = decode_access_token(token)
-    user = db.get(User, user_id) if user_id is not None else None
+    user = await db.get(User, user_id) if user_id is not None else None
     if user is None:
         raise HTTPException(
             status.HTTP_401_UNAUTHORIZED,
@@ -33,14 +33,14 @@ def get_current_user(token: AccessToken, db: DbSession) -> User:
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def get_current_user_id(user: CurrentUser) -> int:
+async def get_current_user_id(user: CurrentUser) -> int:
     return user.id
 
 
 CurrentUserId = Annotated[int, Depends(get_current_user_id)]
 
 
-def get_client_ip(request: Request) -> str:
+async def get_client_ip(request: Request) -> str:
     """The IP the server sees. Behind a proxy that is the proxy's, unless uvicorn
     runs with --proxy-headers and --forwarded-allow-ips set to the proxy: never
     read X-Forwarded-For here, any client could forge it."""

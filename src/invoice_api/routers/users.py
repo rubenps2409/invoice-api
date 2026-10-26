@@ -7,5 +7,5 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me", response_model=UserRead)
-def read_current_user(user: CurrentUser):
+async def read_current_user(user: CurrentUser):
     return user

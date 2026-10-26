@@ -12,7 +12,7 @@ from decimal import Decimal
 from enum import StrEnum
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from invoice_api.config import settings
 from invoice_api.models import LlmCall
@@ -45,26 +45,26 @@ def _day(now: datetime) -> tuple[datetime, datetime]:
     return start, start + timedelta(days=1)
 
 
-def _spent(
-    db: Session, start: datetime, end: datetime, user_id: int | None = None
+async def _spent(
+    db: AsyncSession, start: datetime, end: datetime, user_id: int | None = None
 ) -> tuple[Decimal, int]:
     stmt = select(func.coalesce(func.sum(LlmCall.cost_usd), 0), func.count()).where(
         LlmCall.created_at >= start, LlmCall.created_at < end
     )
     if user_id is not None:
         stmt = stmt.where(LlmCall.user_id == user_id)
-    spent, calls = db.execute(stmt).one()
+    spent, calls = (await db.execute(stmt)).one()
     return Decimal(spent), calls
 
 
-def usage_today(db: Session, user_id: int, now: datetime | None = None) -> Usage:
+async def usage_today(db: AsyncSession, user_id: int, now: datetime | None = None) -> Usage:
     """What the user has spent since 00:00 UTC."""
     start, end = _day(now or datetime.now(UTC))
-    spent, calls = _spent(db, start, end, user_id)
+    spent, calls = await _spent(db, start, end, user_id)
     return Usage(period_start=start, resets_at=end, spent_usd=spent, calls=calls)
 
 
-def check_budget(db: Session, user_id: int, now: datetime | None = None) -> None:
+async def check_budget(db: AsyncSession, user_id: int, now: datetime | None = None) -> None:
     """Raise UsageLimitExceeded if today's spending reached a limit.
 
     The global limit is checked first: when it is hit nobody can extract, whatever
@@ -75,10 +75,10 @@ def check_budget(db: Session, user_id: int, now: datetime | None = None) -> None
     start, end = _day(now)
     retry_after = math.ceil((end - now.astimezone(UTC)).total_seconds())
 
-    global_spent, _ = _spent(db, start, end)
+    global_spent, _ = await _spent(db, start, end)
     if global_spent >= settings.GLOBAL_DAILY_BUDGET_USD:
         raise UsageLimitExceeded(UsageScope.GLOBAL, retry_after)
 
-    user_spent, _ = _spent(db, start, end, user_id)
+    user_spent, _ = await _spent(db, start, end, user_id)
     if user_spent >= settings.USER_DAILY_BUDGET_USD:
         raise UsageLimitExceeded(UsageScope.USER, retry_after)

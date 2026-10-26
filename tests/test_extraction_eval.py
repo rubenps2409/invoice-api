@@ -21,8 +21,8 @@ RUNS = 3  # the model is not deterministic: judge the average, not one lucky run
 
 
 @pytest.mark.skipif(settings.ANTHROPIC_API_KEY is None, reason="ANTHROPIC_API_KEY is not set")
-def test_extraction_quality_with_the_real_model():
-    report = run_eval_repeated(get_extractor(), runs=RUNS)
+async def test_extraction_quality_with_the_real_model():
+    report = await run_eval_repeated(await get_extractor(), runs=RUNS)
     print("\n" + format_repeated(report))
     save_report(report)
 

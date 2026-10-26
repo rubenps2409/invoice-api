@@ -60,22 +60,22 @@ def test_cost_is_rounded_to_the_column_precision():
 
 
 @pytest.fixture
-def user(db):
+async def user(db):
     row = User(email="llm@example.com", hashed_password="x")
     db.add(row)
-    db.commit()
+    await db.commit()
     return row
 
 
-def test_one_row_is_stored_per_attempt(db, user):
+async def test_one_row_is_stored_per_attempt(db, user):
     attempts = [
         Attempt(AttemptOutcome.INVALID_OUTPUT, 900, 40, 800, "total_amount: mismatch"),
         Attempt(AttemptOutcome.OK, 1000, 100, 1200),
     ]
 
-    record_attempts(db, user.id, attempts, model="some-model")
+    await record_attempts(db, user.id, attempts, model="some-model")
 
-    rows = db.scalars(select(LlmCall).order_by(LlmCall.id)).all()
+    rows = (await db.scalars(select(LlmCall).order_by(LlmCall.id))).all()
     assert [r.outcome for r in rows] == [AttemptOutcome.INVALID_OUTPUT, AttemptOutcome.OK]
     first, second = rows
     assert first.user_id == user.id
@@ -87,17 +87,19 @@ def test_one_row_is_stored_per_attempt(db, user):
     assert second.created_at is not None
 
 
-def test_cost_uses_the_configured_prices(db, user, monkeypatch):
+async def test_cost_uses_the_configured_prices(db, user, monkeypatch):
     monkeypatch.setattr(settings, "LLM_INPUT_PRICE_PER_MTOK", Decimal(1))
     monkeypatch.setattr(settings, "LLM_OUTPUT_PRICE_PER_MTOK", Decimal(2))
 
-    (call,) = record_attempts(db, user.id, [Attempt(AttemptOutcome.OK, 1000, 500)], model="m")
+    (call,) = await record_attempts(
+        db, user.id, [Attempt(AttemptOutcome.OK, 1000, 500)], model="m"
+    )
 
     assert call.cost_usd == Decimal("0.00200000")
 
 
-def test_failed_attempts_without_tokens_are_recorded_with_zero_cost(db, user):
-    (call,) = record_attempts(
+async def test_failed_attempts_without_tokens_are_recorded_with_zero_cost(db, user):
+    (call,) = await record_attempts(
         db,
         user.id,
         [Attempt(AttemptOutcome.TIMEOUT, latency_ms=30000, detail="request timed out")],
@@ -109,26 +111,26 @@ def test_failed_attempts_without_tokens_are_recorded_with_zero_cost(db, user):
     assert call.cost_usd == 0
 
 
-def test_long_detail_is_truncated_to_fit_the_column(db, user):
+async def test_long_detail_is_truncated_to_fit_the_column(db, user):
     long_detail = "x" * 1000
 
-    record_attempts(
+    await record_attempts(
         db, user.id, [Attempt(AttemptOutcome.INVALID_OUTPUT, 1, 1, 1, long_detail)], model="m"
     )
 
-    stored = db.scalar(select(LlmCall.detail))
+    stored = await db.scalar(select(LlmCall.detail))
     assert stored is not None
     assert len(stored) == 255
 
 
-def test_no_attempts_stores_nothing(db, user):
-    assert record_attempts(db, user.id, [], model="m") == []
-    assert db.scalars(select(LlmCall)).all() == []
+async def test_no_attempts_stores_nothing(db, user):
+    assert await record_attempts(db, user.id, [], model="m") == []
+    assert (await db.scalars(select(LlmCall))).all() == []
 
 
-def test_records_survive_a_later_rollback(db, user):
-    record_attempts(db, user.id, [Attempt(AttemptOutcome.OK, 10, 5, 100)], model="m")
+async def test_records_survive_a_later_rollback(db, user):
+    await record_attempts(db, user.id, [Attempt(AttemptOutcome.OK, 10, 5, 100)], model="m")
 
-    db.rollback()  # e.g. the request fails afterwards
+    await db.rollback()  # e.g. the request fails afterwards
 
-    assert len(db.scalars(select(LlmCall)).all()) == 1
+    assert len((await db.scalars(select(LlmCall))).all()) == 1
