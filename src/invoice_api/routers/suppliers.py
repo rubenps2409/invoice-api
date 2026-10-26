@@ -21,9 +21,9 @@ _CONSTRAINT_DETAILS = {
 }
 
 
-def _get_owned_supplier(db: DbSession, supplier_id: int, user_id: int) -> Supplier:
+async def _get_owned_supplier(db: DbSession, supplier_id: int, user_id: int) -> Supplier:
     """Return 404 for missing and foreign records alike, so existence isn't leaked."""
-    supplier = db.scalar(
+    supplier = await db.scalar(
         select(Supplier).where(Supplier.id == supplier_id, Supplier.user_id == user_id)
     )
     if supplier is None:
@@ -32,15 +32,17 @@ def _get_owned_supplier(db: DbSession, supplier_id: int, user_id: int) -> Suppli
 
 
 @router.post("", response_model=SupplierRead, status_code=status.HTTP_201_CREATED)
-def create_supplier(data: SupplierCreate, db: DbSession, user_id: CurrentUserId):
+async def create_supplier(data: SupplierCreate, db: DbSession, user_id: CurrentUserId):
     supplier = Supplier(**data.model_dump(), user_id=user_id)
     db.add(supplier)
-    commit_or_conflict(db, unique_detail=_DUPLICATE, constraint_details=_CONSTRAINT_DETAILS)
+    await commit_or_conflict(
+        db, unique_detail=_DUPLICATE, constraint_details=_CONSTRAINT_DETAILS
+    )
     return supplier
 
 
 @router.get("", response_model=list[SupplierRead])
-def list_suppliers(
+async def list_suppliers(
     db: DbSession,
     user_id: CurrentUserId,
     skip: Skip = 0,
@@ -53,30 +55,32 @@ def list_suppliers(
         .offset(skip)
         .limit(limit)
     )
-    return db.scalars(stmt).all()
+    return (await db.scalars(stmt)).all()
 
 
 @router.get("/{supplier_id}", response_model=SupplierRead)
-def get_supplier(supplier_id: IdPath, db: DbSession, user_id: CurrentUserId):
-    return _get_owned_supplier(db, supplier_id, user_id)
+async def get_supplier(supplier_id: IdPath, db: DbSession, user_id: CurrentUserId):
+    return await _get_owned_supplier(db, supplier_id, user_id)
 
 
 @router.put("/{supplier_id}", response_model=SupplierRead)
-def update_supplier(
+async def update_supplier(
     supplier_id: IdPath, data: SupplierUpdate, db: DbSession, user_id: CurrentUserId
 ):
-    supplier = _get_owned_supplier(db, supplier_id, user_id)
+    supplier = await _get_owned_supplier(db, supplier_id, user_id)
     supplier.name = data.name
     # Omitted means "leave as is"; an explicit null clears it.
     if "tax_id" in data.model_fields_set:
         supplier.tax_id = data.tax_id
-    commit_or_conflict(db, unique_detail=_DUPLICATE, constraint_details=_CONSTRAINT_DETAILS)
+    await commit_or_conflict(
+        db, unique_detail=_DUPLICATE, constraint_details=_CONSTRAINT_DETAILS
+    )
     return supplier
 
 
 @router.delete("/{supplier_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_supplier(supplier_id: IdPath, db: DbSession, user_id: CurrentUserId):
-    supplier = _get_owned_supplier(db, supplier_id, user_id)
-    db.delete(supplier)
-    commit_or_conflict(db, unique_detail=_IN_USE, fk_detail=_IN_USE)
+async def delete_supplier(supplier_id: IdPath, db: DbSession, user_id: CurrentUserId):
+    supplier = await _get_owned_supplier(db, supplier_id, user_id)
+    await db.delete(supplier)
+    await commit_or_conflict(db, unique_detail=_IN_USE, fk_detail=_IN_USE)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

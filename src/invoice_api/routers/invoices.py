@@ -22,8 +22,8 @@ _REFERENCE_REMOVED = "Supplier or category was removed, retry"
 _UNPROCESSABLE = status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
-def _get_owned_invoice(db: DbSession, invoice_id: int, user_id: int) -> Invoice:
-    invoice = db.scalar(
+async def _get_owned_invoice(db: DbSession, invoice_id: int, user_id: int) -> Invoice:
+    invoice = await db.scalar(
         select(Invoice).where(Invoice.id == invoice_id, Invoice.user_id == user_id)
     )
     if invoice is None:
@@ -31,7 +31,7 @@ def _get_owned_invoice(db: DbSession, invoice_id: int, user_id: int) -> Invoice:
     return invoice
 
 
-def _ensure_references(
+async def _ensure_references(
     db: DbSession, user_id: int, supplier_id: int | None, category_id: int | None
 ) -> None:
     """Check that supplier/category exist AND belong to the user.
@@ -40,7 +40,7 @@ def _ensure_references(
     """
     if (
         supplier_id is not None
-        and db.scalar(
+        and await db.scalar(
             select(Supplier.id).where(Supplier.id == supplier_id, Supplier.user_id == user_id)
         )
         is None
@@ -48,7 +48,7 @@ def _ensure_references(
         raise HTTPException(_UNPROCESSABLE, "supplier_id does not exist")
     if (
         category_id is not None
-        and db.scalar(
+        and await db.scalar(
             select(Category.id).where(Category.id == category_id, Category.user_id == user_id)
         )
         is None
@@ -57,12 +57,12 @@ def _ensure_references(
 
 
 @router.post("", response_model=InvoiceRead, status_code=status.HTTP_201_CREATED)
-def create_invoice(data: InvoiceCreate, db: DbSession, user_id: CurrentUserId):
-    _ensure_references(db, user_id, data.supplier_id, data.category_id)
+async def create_invoice(data: InvoiceCreate, db: DbSession, user_id: CurrentUserId):
+    await _ensure_references(db, user_id, data.supplier_id, data.category_id)
     invoice = Invoice(**data.model_dump(), user_id=user_id)
     db.add(invoice)
     # The supplier/category may be deleted between the check and the commit.
-    commit_or_conflict(
+    await commit_or_conflict(
         db,
         unique_detail=INVOICE_DUPLICATE_DETAIL,
         fk_detail=_REFERENCE_REMOVED,
@@ -71,7 +71,7 @@ def create_invoice(data: InvoiceCreate, db: DbSession, user_id: CurrentUserId):
 
 
 @router.get("", response_model=list[InvoiceRead])
-def list_invoices(
+async def list_invoices(
     db: DbSession,
     user_id: CurrentUserId,
     supplier_id: DbId | None = None,
@@ -98,22 +98,22 @@ def list_invoices(
         stmt = stmt.where(Invoice.issue_date <= date_to)
     # id as tie-breaker keeps the order deterministic, so pagination is stable.
     stmt = stmt.order_by(Invoice.issue_date.desc(), Invoice.id.desc())
-    return db.scalars(stmt.offset(skip).limit(limit)).all()
+    return (await db.scalars(stmt.offset(skip).limit(limit))).all()
 
 
 @router.get("/{invoice_id}", response_model=InvoiceRead)
-def get_invoice(invoice_id: IdPath, db: DbSession, user_id: CurrentUserId):
-    return _get_owned_invoice(db, invoice_id, user_id)
+async def get_invoice(invoice_id: IdPath, db: DbSession, user_id: CurrentUserId):
+    return await _get_owned_invoice(db, invoice_id, user_id)
 
 
 @router.patch("/{invoice_id}", response_model=InvoiceRead)
-def update_invoice(
+async def update_invoice(
     invoice_id: IdPath, data: InvoiceUpdate, db: DbSession, user_id: CurrentUserId
 ):
-    invoice = _get_owned_invoice(db, invoice_id, user_id)
+    invoice = await _get_owned_invoice(db, invoice_id, user_id)
     changes = data.model_dump(exclude_unset=True)
 
-    _ensure_references(
+    await _ensure_references(
         db,
         user_id,
         changes.get("supplier_id"),
@@ -133,7 +133,7 @@ def update_invoice(
 
     for field, value in changes.items():
         setattr(invoice, field, value)
-    commit_or_conflict(
+    await commit_or_conflict(
         db,
         unique_detail=INVOICE_DUPLICATE_DETAIL,
         fk_detail=_REFERENCE_REMOVED,
@@ -142,8 +142,8 @@ def update_invoice(
 
 
 @router.delete("/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_invoice(invoice_id: IdPath, db: DbSession, user_id: CurrentUserId):
-    invoice = _get_owned_invoice(db, invoice_id, user_id)
-    db.delete(invoice)
-    db.commit()
+async def delete_invoice(invoice_id: IdPath, db: DbSession, user_id: CurrentUserId):
+    invoice = await _get_owned_invoice(db, invoice_id, user_id)
+    await db.delete(invoice)
+    await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)

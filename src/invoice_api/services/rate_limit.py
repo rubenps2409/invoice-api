@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 
 from sqlalchemy import delete, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from invoice_api.constants import RATE_LIMIT_MAX_WINDOW_MINUTES
 from invoice_api.models import RateLimitEvent
@@ -35,8 +35,8 @@ def hash_key(*parts: str) -> str:
     return hashlib.sha256("\x1f".join(parts).encode()).hexdigest()
 
 
-def check(
-    db: Session,
+async def check(
+    db: AsyncSession,
     action: RateLimitAction,
     key_hash: str,
     *,
@@ -46,21 +46,22 @@ def check(
 ) -> None:
     """Raise RateLimitExceeded if the key already has `limit` events in the window."""
     now = now or datetime.now(UTC)
-    count, oldest = db.execute(
+    result = await db.execute(
         select(func.count(), func.min(RateLimitEvent.created_at)).where(
             RateLimitEvent.action == action,
             RateLimitEvent.key_hash == key_hash,
             RateLimitEvent.created_at > now - window,
         )
-    ).one()
+    )
+    count, oldest = result.one()
     if count >= limit:
         # Allowed again when the oldest event of the window falls out of it.
         wait = math.ceil((oldest + window - now).total_seconds())
         raise RateLimitExceeded(max(wait, 1))
 
 
-def record(
-    db: Session,
+async def record(
+    db: AsyncSession,
     action: RateLimitAction,
     *key_hashes: str,
     now: datetime | None = None,
@@ -73,4 +74,4 @@ def record(
     )
     # Older events can never matter again: no window is longer than a day.
     expired = now - timedelta(minutes=RATE_LIMIT_MAX_WINDOW_MINUTES)
-    db.execute(delete(RateLimitEvent).where(RateLimitEvent.created_at < expired))
+    await db.execute(delete(RateLimitEvent).where(RateLimitEvent.created_at < expired))

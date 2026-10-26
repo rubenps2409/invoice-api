@@ -78,8 +78,8 @@ class Invoice(Base):
         default=InvoiceStatus.PENDING,
     )
 
-    supplier: Mapped["Supplier"] = relationship(back_populates="invoices")
-    category: Mapped["Category | None"] = relationship(back_populates="invoices")
+    supplier: Mapped["Supplier"] = relationship(back_populates="invoices", lazy="raise")
+    category: Mapped["Category | None"] = relationship(back_populates="invoices", lazy="raise")
 
     __table_args__ = (
         UniqueConstraint("user_id", "supplier_id", "number", name=INVOICE_NUMBER_UNIQUE),

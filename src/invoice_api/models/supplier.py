@@ -26,7 +26,7 @@ class Supplier(Base):
     tax_id: Mapped[str | None] = mapped_column(String(SUPPLIER_TAX_ID_MAX_LENGTH))
 
     invoices: Mapped[list["Invoice"]] = relationship(
-        back_populates="supplier", passive_deletes="all"
+        back_populates="supplier", passive_deletes="all", lazy="raise"
     )
 
     __table_args__ = (

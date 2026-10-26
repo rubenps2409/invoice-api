@@ -52,7 +52,7 @@ _ERROR_STATUS: dict[type[ExtractionError], int] = {
         504: {"description": "The model took too long to answer"},
     },
 )
-def extract_invoice(
+async def extract_invoice(
     data: ExtractionRequest,
     db: DbSession,
     user_id: CurrentUserId,
@@ -61,7 +61,7 @@ def extract_invoice(
     """Extract an invoice from raw text and store it as a pending invoice."""
     # Before anything is spent. The extraction that crosses the limit is served.
     try:
-        check_budget(db, user_id)
+        await check_budget(db, user_id)
     except UsageLimitExceeded as exc:
         if exc.scope == UsageScope.GLOBAL:
             raise retry_later(
@@ -73,24 +73,25 @@ def extract_invoice(
             status.HTTP_429_TOO_MANY_REQUESTS, _USER_BUDGET_REACHED, exc.retry_after_seconds
         ) from exc
 
-    categories = db.scalars(
+    names = await db.scalars(
         select(Category.name).where(Category.user_id == user_id).order_by(Category.name)
-    ).all()
+    )
+    categories = names.all()
 
     # The user lookup and the queries above opened a transaction. End it so the
     # pooled connection is not held while the (slow) model call runs.
-    db.rollback()
+    await db.rollback()
 
     try:
-        result = extractor.extract(data.text, categories)
+        result = await extractor.extract(data.text, categories)
     except ExtractionError as exc:
         # The tokens were spent even though the extraction failed.
-        record_attempts(db, user_id, exc.attempts, model=extractor.model)
+        await record_attempts(db, user_id, exc.attempts, model=extractor.model)
         raise HTTPException(_ERROR_STATUS[type(exc)], str(exc)) from exc
 
-    record_attempts(db, user_id, result.attempts, model=extractor.model)
+    await record_attempts(db, user_id, result.attempts, model=extractor.model)
 
     try:
-        return create_invoice_from_extraction(db, user_id, result.invoice)
+        return await create_invoice_from_extraction(db, user_id, result.invoice)
     except DuplicateInvoiceError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc

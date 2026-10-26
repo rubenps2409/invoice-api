@@ -290,7 +290,7 @@ def _match_category(invoice: ExtractedInvoice, categories: Sequence[str]) -> Ext
 class InvoiceExtractor:
     def __init__(
         self,
-        client: anthropic.Anthropic,
+        client: anthropic.AsyncAnthropic,
         *,
         model: str,
         max_output_tokens: int,
@@ -305,7 +305,7 @@ class InvoiceExtractor:
     def model(self) -> str:
         return self._model
 
-    def extract(self, text: str, categories: Sequence[str] = ()) -> ExtractionResult:
+    async def extract(self, text: str, categories: Sequence[str] = ()) -> ExtractionResult:
         messages = _base_messages(text, categories)
         attempts: list[Attempt] = []
         last_problem = "no attempt made"
@@ -315,7 +315,7 @@ class InvoiceExtractor:
             try:
                 # No temperature: current models reject any value but the default.
                 # Consistency comes from the prompt, the examples and validation.
-                response = self._client.messages.create(
+                response = await self._client.messages.create(
                     model=self._model,
                     max_tokens=self._max_output_tokens,
                     system=SYSTEM_PROMPT,
@@ -415,8 +415,8 @@ class InvoiceExtractor:
 
 
 @lru_cache
-def _client() -> anthropic.Anthropic:
-    return anthropic.Anthropic(
+def _client() -> anthropic.AsyncAnthropic:
+    return anthropic.AsyncAnthropic(
         api_key=settings.ANTHROPIC_API_KEY.get_secret_value()
         if settings.ANTHROPIC_API_KEY
         else None,
@@ -425,7 +425,14 @@ def _client() -> anthropic.Anthropic:
     )
 
 
-def get_extractor() -> InvoiceExtractor:
+async def close_client() -> None:
+    """Release the HTTP connections of the cached client, if it was ever created."""
+    if _client.cache_info().currsize:
+        await _client().close()
+        _client.cache_clear()
+
+
+async def get_extractor() -> InvoiceExtractor:
     """FastAPI dependency; tests replace it with a fake."""
     if settings.ANTHROPIC_API_KEY is None:
         raise ExtractionNotConfigured("ANTHROPIC_API_KEY is not configured")
