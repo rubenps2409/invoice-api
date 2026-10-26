@@ -35,13 +35,12 @@ async def extraction_not_configured(request: Request, exc: ExtractionNotConfigur
     )
 
 
-def create_app(environment: Environment) -> FastAPI:
-    # The interactive docs list every route and field: only in development.
-    docs = (
-        {"docs_url": None, "redoc_url": None, "openapi_url": None}
-        if environment is Environment.PRODUCTION
-        else {}
-    )
+def create_app(environment: Environment, enable_docs: bool | None = None) -> FastAPI:
+    # The interactive docs list every route and field. Unless forced either way,
+    # they are for development only.
+    if enable_docs is None:
+        enable_docs = environment is not Environment.PRODUCTION
+    docs = {} if enable_docs else {"docs_url": None, "redoc_url": None, "openapi_url": None}
     app = FastAPI(title="Invoice API", lifespan=lifespan, **docs)
     app.add_middleware(RequestLogMiddleware)
     app.add_exception_handler(ExtractionNotConfigured, extraction_not_configured)
@@ -60,4 +59,4 @@ def create_app(environment: Environment) -> FastAPI:
 
 
 configure_logging(settings.ENVIRONMENT, settings.LOG_LEVEL)
-app = create_app(settings.ENVIRONMENT)
+app = create_app(settings.ENVIRONMENT, settings.ENABLE_DOCS)

@@ -10,10 +10,9 @@ from scripts.seed import main as seed_main
 DOCS_URLS = ["/docs", "/redoc", "/openapi.json"]
 
 
-def client_of(environment: Environment) -> AsyncClient:
-    return AsyncClient(
-        transport=ASGITransport(app=create_app(environment)), base_url="http://test"
-    )
+def client_of(environment: Environment, enable_docs: bool | None = None) -> AsyncClient:
+    app = create_app(environment, enable_docs)
+    return AsyncClient(transport=ASGITransport(app=app), base_url="http://test")
 
 
 @pytest.mark.parametrize("url", DOCS_URLS)
@@ -26,6 +25,22 @@ async def test_the_docs_are_served_in_development(url):
 async def test_the_docs_are_hidden_in_production(url):
     async with client_of(Environment.PRODUCTION) as client:
         assert (await client.get(url)).status_code == 404
+
+
+@pytest.mark.parametrize("url", DOCS_URLS)
+async def test_the_docs_can_be_forced_on_in_production(url):
+    async with client_of(Environment.PRODUCTION, enable_docs=True) as client:
+        assert (await client.get(url)).status_code == 200
+
+
+@pytest.mark.parametrize("url", DOCS_URLS)
+async def test_the_docs_can_be_forced_off_in_development(url):
+    async with client_of(Environment.DEVELOPMENT, enable_docs=False) as client:
+        assert (await client.get(url)).status_code == 404
+
+
+def test_the_docs_setting_is_unset_by_default():
+    assert type(settings).model_fields["ENABLE_DOCS"].default is None
 
 
 async def test_the_api_itself_still_works_in_production():
